@@ -10,6 +10,7 @@ private:
 	int pinClock;
 	int pinData;
 	int maxCount;
+	int offset;
 
 	byte shiftIn();
 
@@ -19,6 +20,19 @@ public:
 	~MagneticEncoder();
 
 	unsigned int readPosition();
+	//WRAPPER, not necessary??
+	int getMECount();
+
+	void setOffset(int offset);
+	int getOffset();
+
+	float countToAngleFloat(int count);
+	int countToMinutes(int count);
+	int mintesToCount(int minutes);
+	int angleFloatToCount(float angle);
+
+	int getCWDistance(int current, int target);
+	int getCCWDistance(int current, int target);
 };
 
 #endif

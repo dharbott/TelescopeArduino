@@ -48,26 +48,14 @@ int i = 0;
 int current = 0;
 int nextIn = 0;
 
-unsigned long MencAltOffset = 0;
-unsigned long MencAzmOffset = 0;
-
-
-int getCWDistance (int current, int target) {
-  return (target - current + ((target < current)*4096));
-}
-
-//MERGE SIMILAR FUNCTIONS??
-int getCCWDistance (int current, int target) {
-  return (current - target + ((target > current)*4096));
-}
 
 
 void motorGOCW (Motor motor1, int inputMECount) {
-  int temp;
+  int temp = 0;
   int tempspeed;
 
   while (true) {
-    temp = getCWDistance (getMECount(), inputMECount);
+//    temp = getCWDistance (getMECount(), inputMECount);
     if  (temp >= 100)
       tempspeed = 255; 
     else if (temp >= 40)
@@ -85,11 +73,11 @@ void motorGOCW (Motor motor1, int inputMECount) {
 
 //SAVE MEMORY - MERGE SIMILAR FUNCTIONS
 void motorGOCCW (Motor motor1, int inputMECount) {
-  int temp;
+  int temp = 0;
   int tempspeed;  
 
   while (true) {
-    temp = getCWDistance (inputMECount, getMECount());
+   // temp = getCWDistance (inputMECount, getMECount());
     if  (temp >= 100)
       tempspeed = -255;   
     else if (temp >= 40)
@@ -104,12 +92,6 @@ void motorGOCCW (Motor motor1, int inputMECount) {
   motor1.motorGo(0);
 }
 
-
-//WRAPPER, not necessary??
-int getMECount() {
-	return 0;
-  //return readPosition();
-}
 
 
 

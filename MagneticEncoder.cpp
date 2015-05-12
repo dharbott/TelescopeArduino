@@ -6,6 +6,7 @@ MagneticEncoder::MagneticEncoder(int ppinSelect, int ppinClock, int ppinData)
 	pinClock = ppinClock;
 	pinData = ppinData;
 	maxCount = 4096;
+	offset = 0;
 }
 
 MagneticEncoder::MagneticEncoder(int ppinSelect, int ppinClock, int ppinData, int pmaxCount)
@@ -14,6 +15,7 @@ MagneticEncoder::MagneticEncoder(int ppinSelect, int ppinClock, int ppinData, in
 	pinClock = ppinClock;
 	pinData = ppinData;
 	maxCount = pmaxCount;
+	offset = 0;
 }
 
 MagneticEncoder::~MagneticEncoder() {
@@ -70,3 +72,61 @@ byte MagneticEncoder::shiftIn()
 	return data;
 }
 
+
+//WRAPPER, not necessary??
+int MagneticEncoder::getMECount() {
+	return readPosition();
+}
+
+
+// assume valid input
+// input is the 12-bit mag encoder's output (0-4095)
+// -I think using a long, multiplying by an int, then
+// dividing by a float will yield the best accuracy
+// but then again this is just a guess
+float MagneticEncoder::countToAngleFloat(int input){
+	long temp = input;
+	return ((temp * 45) / 512.0);
+	//return ((input / 4096.0) * 360.0);
+}
+
+// I think using a long, multiplying by an int, then
+// dividing by a float will yield the best accuracy
+// but then again this is just a guess
+int MagneticEncoder::countToMinutes(int input)
+{
+	long temp = input;
+	return ((temp * 675) / 128.0);
+	//return (input / 4096.0) * 21600.0;
+}
+
+int MagneticEncoder::mintesToCount(int input)
+{
+	long temp = input;
+	return ((temp * 128) / 675.0);
+	//return ((input / 21600.0) * 4096.0);
+}
+
+int MagneticEncoder::angleFloatToCount(float input)
+{
+	long temp = ((input * 512) / 45.0);
+	return temp;
+}
+
+
+int MagneticEncoder::getCWDistance(int current, int target) {
+	return (target - current + ((target < current) * 4096));
+}
+
+//SAVE MEMORY - MERGE SIMILAR FUNCTIONS
+int MagneticEncoder::getCCWDistance(int current, int target) {
+	return (current - target + ((target > current) * 4096));
+}
+
+void MagneticEncoder::setOffset(int input) {
+	offset = input;
+}
+
+int MagneticEncoder::getOffset() {
+	return offset;
+}
