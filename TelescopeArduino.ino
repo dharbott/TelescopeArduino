@@ -29,12 +29,6 @@
 #define LSOVR A0
 
 
-struct motorDriver {
-	Motor motor;
-	
-};
-
-
 Motor myMotorAzm = Motor(MD2_PWM, MD2_INA, MD2_INB);
 Motor myMotorAlt = Motor(MD1_PWM, MD1_INA, MD1_INB);
 
