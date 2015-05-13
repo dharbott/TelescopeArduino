@@ -28,12 +28,27 @@
 #define LSOUT A3
 #define LSOVR A0
 
+struct mdriver {
+	Motor motor;
+	MagneticEncoder encoder;
+};
 
-Motor myMotorAzm = Motor(MD2_PWM, MD2_INA, MD2_INB);
-Motor myMotorAlt = Motor(MD1_PWM, MD1_INA, MD1_INB);
+mdriver Azimuth = {
+	Motor(MD2_PWM, MD2_INA, MD2_INB),
+	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN)
+};
 
-MagneticEncoder myMEAzm = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN);
-MagneticEncoder myMEAlt = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN);
+mdriver Altitude = {
+	Motor(MD1_PWM, MD1_INA, MD1_INB),
+	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
+};
+
+//Motor myMotorAzm = Motor(MD2_PWM, MD2_INA, MD2_INB);
+//Motor myMotorAlt = Motor(MD1_PWM, MD1_INA, MD1_INB);
+
+//MagneticEncoder myMEAzm = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN);
+//MagneticEncoder myMEAlt = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN);
+
 
 //=============================================================//
 
@@ -48,9 +63,17 @@ int i = 0;
 int current = 0;
 int nextIn = 0;
 
+//Not efficient? may make too many calls to getMECount or getDistance
+void motorGO(mdriver axis, int inputMECount) {
+	int temp1 = axis.encoder.getCWDistance(axis.encoder.getMECount, inputMECount);
+	int temp2 = axis.encoder.getCCWDistance(axis.encoder.getMECount, inputMECount);
+
+	if (temp1<temp2)
+		motorGOCW
+}
 
 
-void motorGOCW (Motor motor1, int inputMECount) {
+void motorGOCW(mdriver axis, int inputMECount) {
   int temp = 0;
   int tempspeed;
 
@@ -64,15 +87,15 @@ void motorGOCW (Motor motor1, int inputMECount) {
       tempspeed = 20;
     else
       break;
-	motor1.motorGo(tempspeed);
+	axis.motor.motorGo(tempspeed);
     delay(1);
   }
-  motor1.motorGo(0);
+  axis.motor.motorGo(0);
 }
 
 
 //SAVE MEMORY - MERGE SIMILAR FUNCTIONS
-void motorGOCCW (Motor motor1, int inputMECount) {
+void motorGOCCW(mdriver axis, int inputMECount) {
   int temp = 0;
   int tempspeed;  
 
@@ -86,14 +109,11 @@ void motorGOCCW (Motor motor1, int inputMECount) {
       tempspeed = -20;  
     else
       break;
-	motor1.motorGo(tempspeed);
+	axis.motor.motorGo(tempspeed);
     delay(10);
   }
-  motor1.motorGo(0);
+  axis.motor.motorGo(0);
 }
-
-
-
 
 
 
@@ -134,8 +154,7 @@ void setup() {
   pinMode(LSOUT, INPUT);
   pinMode(LSOVR, OUTPUT);
 
-
-
+  
   // put your setup code here, to run once:
   Serial.begin(19200);
   pinMode(13, OUTPUT);

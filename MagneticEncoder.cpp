@@ -22,14 +22,12 @@ MagneticEncoder::~MagneticEncoder() {
 }
 
 //read the current angular position, binary, 16 bits
-//CURRENTLY HARDCODED TO PINS 11,12,13 for MAGNETIC ENCODER AZM
-//EVENTUALLY NEED A 2ND ReadPosition for MAGNETIC ENCODER ALT
 unsigned int MagneticEncoder::readPosition()
 {
 	unsigned int posbyte = 0;
 
-	//There is a function in the Arduino Lib that does the following
-
+	//There is a function in the Arduino Lib that does 
+	//the following bit manipulation
 
 	//shift in our data  
 	digitalWrite(pinSelect, LOW);
@@ -123,6 +121,9 @@ int MagneticEncoder::getCCWDistance(int current, int target) {
 	return (current - target + ((target > current) * 4096));
 }
 
+
+//WE"RE NOT TOUCHING OFFSETS YET
+//TODO LATER
 void MagneticEncoder::setOffset(int input) {
 	offset = input;
 }
