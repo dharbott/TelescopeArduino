@@ -15,6 +15,7 @@ private:
 	byte shiftIn();
 
 public:
+	MagneticEncoder();
 	MagneticEncoder(int ppinSelect, int ppinClock, int ppData);
 	MagneticEncoder(int ppinSelect, int ppinClock, int ppData, int pmaxCount);
 	~MagneticEncoder();

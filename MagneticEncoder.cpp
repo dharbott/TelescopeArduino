@@ -1,5 +1,14 @@
 #include "MagneticEncoder.h"
 
+MagneticEncoder::MagneticEncoder()
+{
+	pinSelect = -1;
+	pinClock = -1;
+	pinData = -1;
+	maxCount = 4096;
+	offset = -1;
+}
+
 MagneticEncoder::MagneticEncoder(int ppinSelect, int ppinClock, int ppinData)
 {
 	pinSelect = ppinSelect;
@@ -113,12 +122,12 @@ int MagneticEncoder::angleFloatToCount(float input)
 
 
 int MagneticEncoder::getCWDistance(int current, int target) {
-	return (target - current + ((target < current) * 4096));
+	return (target - current + ((target < current) * maxCount));
 }
 
 //MERGE SIMILAR FUNCTIONS
 int MagneticEncoder::getCCWDistance(int current, int target) {
-	return (current - target + ((target > current) * 4096));
+	return (current - target + ((target > current) * maxCount));
 }
 
 

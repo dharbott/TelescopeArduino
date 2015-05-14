@@ -1,5 +1,6 @@
 #include "Motor.h"
 #include "MagneticEncoder.h"
+#include "Axis.h"
 
 #define bufflen 8
 #define codelen 16
@@ -29,26 +30,15 @@
 #define LSOVR A0
 
 
-//Motor myMotorAzm = Motor(MD2_PWM, MD2_INA, MD2_INB);
-//Motor myMotorAlt = Motor(MD1_PWM, MD1_INA, MD1_INB);
-//MagneticEncoder myMEAzm = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN);
-//MagneticEncoder myMEAlt = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN);
-
-struct mdriver {
-	Motor motor;
-	MagneticEncoder encoder;
-};
-
-mdriver Azimuth = {
+Axis Azimuth = Axis(
 	Motor(MD2_PWM, MD2_INA, MD2_INB),
 	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN)
-};
+	);
 
-mdriver Altitude = {
+Axis Altitude = Axis(
 	Motor(MD1_PWM, MD1_INA, MD1_INB),
 	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
-};
-
+);
 
 
 // ByteArray, my internal command queue
@@ -61,77 +51,6 @@ int stringCount = 0;
 int i = 0;
 int current = 0;
 int nextIn = 0;
-
-
-//Is there a better design?
-void motorGO(struct mdriver axis, int inputMECount) {
-
-	MagneticEncoder tempME = axis.encoder;
-
-	int temp1 = tempME.getCWDistance(tempME.getMECount(), inputMECount);
-	int temp2 = tempME.getCCWDistance(tempME.getMECount(), inputMECount);
-
-	if (temp1 < temp2)
-	{
-		motorGOCW(axis, inputMECount);
-	}
-	else
-	{
-		motorGOCCW(axis, inputMECount);
-	}
-}
-
-
-void motorGOCW(struct mdriver axis, int inputMECount) {
-  
-  MagneticEncoder tempME = axis.encoder;
-  Motor tempMot = axis.motor;
-
-  int distance;
-  int tempspeed;
-
-  while (true) {
-	distance = tempME.getCWDistance(tempME.getMECount(), inputMECount);
-	if (distance >= 100)
-      tempspeed = 255; 
-	else if (distance >= 40)
-      tempspeed = 100;
-    else if (distance >= 1)
-      tempspeed = 20;
-    else
-      break;
-	tempMot.motorGo(tempspeed);
-    delay(3);
-  }
-  tempMot.motorGo(0);
-}
-
-
-//SAVE MEMORY - MERGE SIMILAR FUNCTIONS
-void motorGOCCW(struct mdriver axis, int inputMECount) {
-
-  MagneticEncoder tempME = axis.encoder;
-  Motor tempMot = axis.motor;
-
-  int distance;
-  int tempspeed;
-
-  while (true) {
-	distance = tempME.getCWDistance(tempME.getMECount(), inputMECount);
-	if (distance >= 100)
-      tempspeed = -255;   
-	else if (distance >= 40)
-      tempspeed = -100;
-	else if (distance >= 1)
-      tempspeed = -20;  
-    else
-      break;
-	tempMot.motorGo(tempspeed);
-    delay(3);
-  }
-  tempMot.motorGo(0);
-}
-
 
 
 //TODO : DOUBLE CHECK PIN NUMBERS
@@ -212,8 +131,8 @@ void loop() {
   //360 degrees/rev * 60 minutes/degree = 21600 minutes/rev
   //21600 fits in 16-bits, a 2-byte integer on Arduino
 
-  int tempParam1 = 0;
-  int tempParam2 = 0;
+  int param1 = 0;
+  int param2 = 0;
 
   if (current!=nextIn)
   {     
@@ -228,33 +147,42 @@ void loop() {
       break;
 
     case 49:
-      //CASE 49, my GOTO Function 1, probably the ClockwiseGOTO
+      //CASE 49, my GOTO Function 1
       //FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+	  //This function determines whether going clockwise or counter
+	  //is the shortest path, and takes it
 
-      tempParam1 = getParam1(byteArray[current]);
-      tempParam2 = getParam2(byteArray[current]);
+      param1 = getParam1(byteArray[current]);
+      param2 = getParam2(byteArray[current]);
 
       Serial.write("You sent a char '1', GOTO Command.\t");
       Serial.print ("P1 Azimuth : ");
-      Serial.print (tempParam1);
+      Serial.print (param1);
       Serial.print ("\tP2 Altitude : ");
-      Serial.print (tempParam2);
+      Serial.print (param2);
 
-	  //Clockwise or CounterClockwise?
-	  //motorGO : check distance, go whichever way is shortest
-	  //move Azimuth axis motor first
-	  //then move Altitude axis motor second
-	  motorGO(Azimuth, tempParam1);
-	  motorGO(Altitude, tempParam2);
+	  Azimuth.motorGO(Azimuth.getEncoder().mintesToCount(param1));
 
+	  //Azimuth.motorGO((Azimuth.getEncoder().mintesToCount(param1) + 100) % 4096);
+
+	  //Altitude magnetic encoder not implement yet
+	  //Azimuth.motorGO(Azimuth.getEncoder().mintesToCount(param1));
 
       break;
 
     case 50:
+		//CASE 50, my GOTO Function 2, probably the Clockwise
+		//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+		//This function only makes it rotate clockwise
+
       Serial.write("You sent a char '2'.\t");
       break;
 
     case 51:
+		//CASE 51, my GOTO Function 3, probably the CounterClockwise
+		//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+		//This function only makes it rotate counterclockwise
+
       Serial.write("You sent a char '3'.\t");
       break;
 

@@ -1,5 +1,15 @@
 #include "Motor.h"
 
+Motor::Motor()
+{
+	pinPWM = -1;
+	pinInputA = -1;
+	pinInputB = -1;
+	//setPWM(0);
+	setClockwise(true);
+	currentPWM = -1;
+}
+
 Motor::Motor(int ppinPWM, int ppinInputA, int ppinInputB){
 		pinPWM = ppinPWM;
 		pinInputA = ppinInputA;

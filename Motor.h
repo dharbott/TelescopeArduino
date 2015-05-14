@@ -22,7 +22,7 @@ private:
 		
 public:
 
-		
+		Motor();
         Motor(int ppinPWM, int ppinInputA, int ppinInputB);
 		~Motor();
 		
