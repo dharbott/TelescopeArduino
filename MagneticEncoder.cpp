@@ -116,7 +116,7 @@ int MagneticEncoder::getCWDistance(int current, int target) {
 	return (target - current + ((target < current) * 4096));
 }
 
-//SAVE MEMORY - MERGE SIMILAR FUNCTIONS
+//MERGE SIMILAR FUNCTIONS
 int MagneticEncoder::getCCWDistance(int current, int target) {
 	return (current - target + ((target > current) * 4096));
 }

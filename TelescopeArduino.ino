@@ -17,8 +17,8 @@
 #define MD2_INA 5
 #define MD2_INB 4
 
-//#define QUAD_A_PIN 2 //not used
-//#define QUAD_B_PIN 3 //not used
+#define QUAD_A_PIN 2 //not used
+#define QUAD_B_PIN 3 //not used
 
 #define HALL_PIN A4
 
@@ -27,6 +27,12 @@
 
 #define LSOUT A3
 #define LSOVR A0
+
+
+//Motor myMotorAzm = Motor(MD2_PWM, MD2_INA, MD2_INB);
+//Motor myMotorAlt = Motor(MD1_PWM, MD1_INA, MD1_INB);
+//MagneticEncoder myMEAzm = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN);
+//MagneticEncoder myMEAlt = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN);
 
 struct mdriver {
 	Motor motor;
@@ -43,18 +49,11 @@ mdriver Altitude = {
 	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
 };
 
-//Motor myMotorAzm = Motor(MD2_PWM, MD2_INA, MD2_INB);
-//Motor myMotorAlt = Motor(MD1_PWM, MD1_INA, MD1_INB);
-
-//MagneticEncoder myMEAzm = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN);
-//MagneticEncoder myMEAlt = MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN);
 
 
-//=============================================================//
-
-// 00000;11111;22222;33333;44444;55555;66666;77777;88888;99999;
-
+// ByteArray, my internal command queue
 // queue works, Arduino Serial buffer still limited at 62 bytes
+// 00000;11111;22222;33333;44444;55555;66666;77777;88888;99999;
 byte byteArray[bufflen][codelen] = { 
 };
 
@@ -63,56 +62,74 @@ int i = 0;
 int current = 0;
 int nextIn = 0;
 
-//Not efficient? may make too many calls to getMECount or getDistance
-void motorGO(mdriver axis, int inputMECount) {
-	int temp1 = axis.encoder.getCWDistance(axis.encoder.getMECount, inputMECount);
-	int temp2 = axis.encoder.getCCWDistance(axis.encoder.getMECount, inputMECount);
 
-	if (temp1<temp2)
-		motorGOCW
+//Is there a better design?
+void motorGO(struct mdriver axis, int inputMECount) {
+
+	MagneticEncoder tempME = axis.encoder;
+
+	int temp1 = tempME.getCWDistance(tempME.getMECount(), inputMECount);
+	int temp2 = tempME.getCCWDistance(tempME.getMECount(), inputMECount);
+
+	if (temp1 < temp2)
+	{
+		motorGOCW(axis, inputMECount);
+	}
+	else
+	{
+		motorGOCCW(axis, inputMECount);
+	}
 }
 
 
-void motorGOCW(mdriver axis, int inputMECount) {
-  int temp = 0;
+void motorGOCW(struct mdriver axis, int inputMECount) {
+  
+  MagneticEncoder tempME = axis.encoder;
+  Motor tempMot = axis.motor;
+
+  int distance;
   int tempspeed;
 
   while (true) {
-//    temp = getCWDistance (getMECount(), inputMECount);
-    if  (temp >= 100)
+	distance = tempME.getCWDistance(tempME.getMECount(), inputMECount);
+	if (distance >= 100)
       tempspeed = 255; 
-    else if (temp >= 40)
+	else if (distance >= 40)
       tempspeed = 100;
-    else if (temp >= 1)
+    else if (distance >= 1)
       tempspeed = 20;
     else
       break;
-	axis.motor.motorGo(tempspeed);
-    delay(1);
+	tempMot.motorGo(tempspeed);
+    delay(3);
   }
-  axis.motor.motorGo(0);
+  tempMot.motorGo(0);
 }
 
 
 //SAVE MEMORY - MERGE SIMILAR FUNCTIONS
-void motorGOCCW(mdriver axis, int inputMECount) {
-  int temp = 0;
-  int tempspeed;  
+void motorGOCCW(struct mdriver axis, int inputMECount) {
+
+  MagneticEncoder tempME = axis.encoder;
+  Motor tempMot = axis.motor;
+
+  int distance;
+  int tempspeed;
 
   while (true) {
-   // temp = getCWDistance (inputMECount, getMECount());
-    if  (temp >= 100)
+	distance = tempME.getCWDistance(tempME.getMECount(), inputMECount);
+	if (distance >= 100)
       tempspeed = -255;   
-    else if (temp >= 40)
+	else if (distance >= 40)
       tempspeed = -100;
-    else if (temp >= 1)
+	else if (distance >= 1)
       tempspeed = -20;  
     else
       break;
-	axis.motor.motorGo(tempspeed);
-    delay(10);
+	tempMot.motorGo(tempspeed);
+    delay(3);
   }
-  axis.motor.motorGo(0);
+  tempMot.motorGo(0);
 }
 
 
@@ -223,17 +240,13 @@ void loop() {
       Serial.print ("\tP2 Altitude : ");
       Serial.print (tempParam2);
 
-      //Clockwise or CounterClockwise?
-      //check distance, go whichever way is shortest
+	  //Clockwise or CounterClockwise?
+	  //motorGO : check distance, go whichever way is shortest
+	  //move Azimuth axis motor first
+	  //then move Altitude axis motor second
+	  motorGO(Azimuth, tempParam1);
+	  motorGO(Altitude, tempParam2);
 
-      //change motorGOCW to 2 parameters, to include motor object
-	  //no, yes? need to implement asynchronous slewing
-	  //
-      //motorGOCW(tempParam1);
-
-      //Clockwise or CounterClockwise?
-      //check distance, go whichever way is shortest
-      //motorAlt.motorGo(tempParam2);
 
       break;
 
