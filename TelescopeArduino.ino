@@ -144,6 +144,8 @@ void loop() {
     {
     case 48:
       Serial.write("You sent a char '0'.\t");
+	  Serial.write("Status - Azimuth :\t");
+	  Serial.print(Azimuth.getEncoder().getMECount());
       break;
 
     case 49:
@@ -161,7 +163,7 @@ void loop() {
       Serial.print ("\tP2 Altitude : ");
       Serial.print (param2);
 
-	  Azimuth.motorGO(Azimuth.getEncoder().mintesToCount(param1));
+	  Azimuth.motorGO(Azimuth.getEncoder().minutesToCount(param1));
 
 	  //Azimuth.motorGO((Azimuth.getEncoder().mintesToCount(param1) + 100) % 4096);
 
@@ -188,10 +190,14 @@ void loop() {
 
     case 52:
       Serial.write("You sent a char '4'.\t");
+	  Serial.write("Moving Azimuth clockwise by 100 points.\t");
+	  Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 100) % 4096);
       break;
 
     case 53:
       Serial.write("You sent a char '5'.\t");
+	  Serial.write("Moving Azimuth counterclockwise by 100 points.\t");
+	  Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 3996) % 4096);
       break;
 
     case 54:

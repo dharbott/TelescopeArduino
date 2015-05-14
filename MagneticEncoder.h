@@ -29,7 +29,7 @@ public:
 
 	float countToAngleFloat(int count);
 	int countToMinutes(int count);
-	int mintesToCount(int minutes);
+	int minutesToCount(int minutes);
 	int angleFloatToCount(float angle);
 
 	int getCWDistance(int current, int target);

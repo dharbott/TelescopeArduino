@@ -75,7 +75,7 @@ void Axis::motorGOCCW(int inputMECount) {
 	int tempspeed;
 
 	while (true) {
-		distance = encoder.getCWDistance(encoder.getMECount(), inputMECount);
+		distance = encoder.getCCWDistance(encoder.getMECount(), inputMECount);
 		if (distance >= 100)
 			tempspeed = -255;
 		else if (distance >= 40)

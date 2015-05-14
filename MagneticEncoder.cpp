@@ -107,7 +107,7 @@ int MagneticEncoder::countToMinutes(int input)
 	//return (input / 4096.0) * 21600.0;
 }
 
-int MagneticEncoder::mintesToCount(int input)
+int MagneticEncoder::minutesToCount(int input)
 {
 	long temp = input;
 	return ((temp * 128) / 675.0);
