@@ -33,8 +33,7 @@
 // queue works, Arduino Serial buffer still limited at 62 bytes
 // 00000;11111;22222;33333;44444;55555;66666;77777;88888;99999;
 // AND, I wanted the command buffer to be fast and stable
-byte byteArray[bufflen][codelen] = {
-};
+byte byteArray[bufflen][codelen] = {};
 
 int stringCount = 0;
 int i = 0;
@@ -49,173 +48,169 @@ Axis Azimuth = Axis(
 Axis Altitude = Axis(
 	Motor(MD1_PWM, MD1_INA, MD1_INB),
 	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
-);
+	);
 
 
 //TODO : DOUBLE CHECK PIN NUMBERS
 void setup() {
 
-  pinMode(SELECT_PIN, OUTPUT);
-  pinMode(CLOCK_PIN, OUTPUT);
-  pinMode(ME1_DATA_PIN, INPUT);
-  pinMode(ME2_DATA_PIN, INPUT);
+	pinMode(SELECT_PIN, OUTPUT);
+	pinMode(CLOCK_PIN, OUTPUT);
+	pinMode(ME1_DATA_PIN, INPUT);
+	pinMode(ME2_DATA_PIN, INPUT);
 
-  pinMode(MD1_PWM, OUTPUT);
-  pinMode(MD1_INA, OUTPUT);
-  pinMode(MD1_INB, OUTPUT);
+	pinMode(MD1_PWM, OUTPUT);
+	pinMode(MD1_INA, OUTPUT);
+	pinMode(MD1_INB, OUTPUT);
 
-  pinMode(MD2_PWM, OUTPUT);
-  pinMode(MD2_INA, OUTPUT);
-  pinMode(MD2_INB, OUTPUT);
+	pinMode(MD2_PWM, OUTPUT);
+	pinMode(MD2_INA, OUTPUT);
+	pinMode(MD2_INB, OUTPUT);
 
-  //give some default values
-  digitalWrite(CLOCK_PIN, HIGH);
-  digitalWrite(SELECT_PIN, HIGH);
+	//give some default values
+	digitalWrite(CLOCK_PIN, HIGH);
+	digitalWrite(SELECT_PIN, HIGH);
 
-  analogWrite(MD1_PWM, 0);
-  digitalWrite(MD1_INA, LOW);
-  digitalWrite(MD1_INB, LOW);
+	analogWrite(MD1_PWM, 0);
+	digitalWrite(MD1_INA, LOW);
+	digitalWrite(MD1_INB, LOW);
 
-  analogWrite(MD2_PWM, 0);
-  digitalWrite(MD2_INA, LOW);
-  digitalWrite(MD2_INB, LOW);
+	analogWrite(MD2_PWM, 0);
+	digitalWrite(MD2_INA, LOW);
+	digitalWrite(MD2_INB, LOW);
 
-  //setup pins for Quadrature, not used
-  //pinMode(QUAD_A_PIN, INPUT);
-  //pinMode(QUAD_B_PIN, INPUT);
+	//setup pins for Quadrature, not used
+	//pinMode(QUAD_A_PIN, INPUT);
+	//pinMode(QUAD_B_PIN, INPUT);
 
-  pinMode(HALL_PIN, INPUT);
+	pinMode(HALL_PIN, INPUT);
 
-  pinMode(LSOUT, INPUT);
-  pinMode(LSOVR, OUTPUT);
+	pinMode(LSOUT, INPUT);
+	pinMode(LSOVR, OUTPUT);
 
-  
-  // put your setup code here, to run once:
-  Serial.begin(19200);
-  pinMode(13, OUTPUT);
-  digitalWrite(13,LOW);
 
-  //delay(1000);
+	// put your setup code here, to run once:
+	Serial.begin(19200);
+	pinMode(13, OUTPUT);
+	digitalWrite(13, LOW);
 
-  //Serial.println("start");
+	//delay(1000);
+
+	//Serial.println("start");
 }
 
 
 void loop() {
 
-  //360 degrees/rev * 60 minutes/degree = 21600 minutes/rev
-  //21600 fits in 16-bits, a 2-byte integer on Arduino
+	//360 degrees/rev * 60 minutes/degree = 21600 minutes/rev
+	//21600 fits in 16-bits, a 2-byte integer on Arduino
 
-  int param1 = 0;
-  int param2 = 0;
-  int param3 = 0;
+	int param1 = 0;
+	int param2 = 0;
+	int param3 = 0;
 
-  if (current!=nextIn)
-  {     
-    //Serial.write("#Instructions left : [");
-    //Serial.print(stringCount);
-    //Serial.write("] - Processing...;\t");
+	if (current != nextIn)
+	{
+		//Serial.write("#Instructions left : [");
+		//Serial.print(stringCount);
+		//Serial.write("] - Processing...;\t");
 
-    switch (byteArray[current][0])
-    {
-    case 48:
-      //Serial.write("You sent a char '0'.\n");
-	  //Serial.write("Status - Azimuth :\t");
+		switch (byteArray[current][0])
+		{
+		case 48:
+			//Serial.write("You sent a char '0'.\n");
+			//Serial.write("Status - Azimuth :\t");
 
-	  param3 = Azimuth.getEncoder().getMECount();
-	  Serial.print(Azimuth.getEncoder().countToMinutes(param3));
-	  Serial.print(";");
-      break;
+			param3 = Azimuth.getEncoder().getMECount();
+			Serial.print(Azimuth.getEncoder().countToMinutes(param3));
+			Serial.print(";");
+			break;
 
-    case 49:
-      //CASE 49, my GOTO Function 1
-      //FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-	  //This function determines whether going clockwise or counter
-	  //is the shortest path, and takes it
+		case 49:
+			//CASE 49, my GOTO Function 1
+			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+			//This function determines whether going clockwise or counter
+			//is the shortest path, and takes it
 
-      param1 = getParam1(byteArray[current]);
-      param2 = getParam2(byteArray[current]);
+			param1 = getParam1(byteArray[current]);
+			param2 = getParam2(byteArray[current]);
 
-	  //Serial.write("'1' GOTO Command - ");
-      Serial.print ("\tP1 Azimuth : ");
-	  Serial.print (param1);
-	  //Serial.print (Azimuth.getEncoder().minutesToCount(param1));
-      Serial.print ("\tP2 Altitude : ");
-	  Serial.print (param2);
-	  //Serial.print (Azimuth.getEncoder().minutesToCount(param2));
-	  Serial.print(";");
+			//Serial.write("'1' GOTO Command - ");
+			Serial.print("\tP1 Azimuth : ");
+			Serial.print(param1);
+			//Serial.print (Azimuth.getEncoder().minutesToCount(param1));
+			Serial.print("\tP2 Altitude : ");
+			Serial.print(param2);
+			//Serial.print (Azimuth.getEncoder().minutesToCount(param2));
+			Serial.print(";");
 
-	  Azimuth.motorGO(Azimuth.getEncoder().minutesToCount(param1));
-	  
-	  //Altitude magnetic encoder not implement yet
-	  //Azimuth.motorGO(Azimuth.getEncoder().mintesToCount(param1));
+			Azimuth.motorGO(Azimuth.getEncoder().minutesToCount(param1));
 
-      break;
+			//Altitude magnetic encoder not implement yet
+			//Azimuth.motorGO(Azimuth.getEncoder().mintesToCount(param1));
 
-    case 50:
+			break;
 
+		case 50:
+			Serial.write("You sent a char '2'.\t");
+			break;
 
-      Serial.write("You sent a char '2'.\t");
-      break;
+		case 51:
+			Serial.write("You sent a char '3'.\t");
+			break;
 
-    case 51:
+		case 52:
+			//CASE 52, my GOTO Function 2, probably the Clockwise
+			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+			//This function only makes it rotate clockwise 100 pts
 
+			Serial.write("You sent a char '4'.\n");
+			Serial.write("Moving Azimuth clockwise by 100 points.\t");
+			Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 100) % 4096);
+			break;
 
-      Serial.write("You sent a char '3'.\t");
-      break;
+		case 53:
+			//CASE 53, my GOTO Function 3, probably the CounterClockwise
+			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+			//This function only makes it rotate counterclockwise 100 pts
+			Serial.write("You sent a char '5'.\n");
+			Serial.write("Moving Azimuth counterclockwise by 100 points.\t");
+			Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 3996) % 4096);
+			break;
 
-    case 52:
-		//CASE 52, my GOTO Function 2, probably the Clockwise
-		//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-		//This function only makes it rotate clockwise 100 pts
+		case 54:
+			Serial.write("You sent a char '6'.\t");
+			break;
 
-      Serial.write("You sent a char '4'.\n");
-	  Serial.write("Moving Azimuth clockwise by 100 points.\t");
-	  Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 100) % 4096);
-      break;
+		case 55:
+			Serial.write("You sent a char '7'.\t");
+			break;
 
-    case 53:
-		//CASE 53, my GOTO Function 3, probably the CounterClockwise
-		//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-		//This function only makes it rotate counterclockwise 100 pts
-      Serial.write("You sent a char '5'.\n");
-	  Serial.write("Moving Azimuth counterclockwise by 100 points.\t");
-	  Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 3996) % 4096);
-      break;
+		case 56:
+			Serial.write("You sent a char '8'.\t");
+			break;
 
-    case 54:
-      Serial.write("You sent a char '6'.\t");
-      break;
+		case 57:
+			Serial.write("You sent a char '9'.\t");
+			break;
 
-    case 55:
-      Serial.write("You sent a char '7'.\t");
-      break;
+		default:
+			Serial.write("You sent a non-cmd : ");
+			Serial.write(byteArray[current][0]);
+			Serial.write('\t');
+			break;
+		}
 
-    case 56:
-      Serial.write("You sent a char '8'.\t");
-      break;
+		//clear out the instruction code
+		for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
 
-    case 57:
-      Serial.write("You sent a char '9'.\t");
-      break;
+		currentPlus();
+		stringCount--;
 
-    default:
-      Serial.write("You sent a non-cmd : ");
-      Serial.write(byteArray[current][0]);
-      Serial.write('\t');
-      break; 
-    }
-
-    //clear out the instruction code
-    for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
-
-    currentPlus();
-    stringCount--;
-
-    //Serial.write(";\n");
-	Serial.write("\n");
-  }
-  delay(500);
+		//Serial.write(";\n");
+		Serial.write("\n");
+	}
+	delay(500);
 }
 
 
@@ -263,7 +258,7 @@ void serialEvent()
 	//keep adding instructions as long as there are bytes in serial available
 	//and while there is at least one empty spot for an instruction in the buffer
 	//this stringCount+1, because nextIn points to an empty spot in the buffer
-	while (Serial.available() && ((stringCount + 1) < bufflen)){
+	while (Serial.available() && ((stringCount + 1) < bufflen)) {
 
 		inByte = Serial.read();
 
