@@ -89,3 +89,10 @@ void Axis::motorGOCCW(int inputMECount) {
 	}
 	motor.motorGo(0);
 }
+
+bool Axis::processME() {
+
+
+
+	return true;
+}

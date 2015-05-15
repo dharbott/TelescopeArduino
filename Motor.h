@@ -29,6 +29,7 @@ public:
 		long pinOut();	//verified, change to String later
 		
 		void setPWM(int intPWM);	//verified
+		void brake();
 		void setClockwise(bool clockwise);	//verified
 		bool isClockwise(); 
 		

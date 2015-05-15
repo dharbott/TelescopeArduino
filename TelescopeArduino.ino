@@ -119,11 +119,9 @@ void loop() {
 		{
 		case 48:
 			//Serial.write("You sent a char '0'.\n");
-			//Serial.write("Status - Azimuth :\t");
-
-			param3 = Azimuth.getEncoder().getMECount();
-			Serial.print(Azimuth.getEncoder().countToMinutes(param3));
-			Serial.print(";");
+			//Serial.write("Status - t");
+			Serial.write("Ready;");
+			
 			break;
 
 		case 49:
@@ -136,10 +134,10 @@ void loop() {
 			param2 = getParam2(byteArray[current]);
 
 			//Serial.write("'1' GOTO Command - ");
-			Serial.print("\tP1 Azimuth : ");
+			Serial.print("P1 Azimuth : ");
 			Serial.print(param1);
 			//Serial.print (Azimuth.getEncoder().minutesToCount(param1));
-			Serial.print("\tP2 Altitude : ");
+			Serial.print(", P2 Altitude : ");
 			Serial.print(param2);
 			//Serial.print (Azimuth.getEncoder().minutesToCount(param2));
 			Serial.print(";");
@@ -152,11 +150,18 @@ void loop() {
 			break;
 
 		case 50:
-			Serial.write("You sent a char '2'.\t");
+			//Serial.write("You sent a char '2'.\t");
+			param3 = Azimuth.getEncoder().getMECount();
+			Serial.print(Azimuth.getEncoder().countToMinutes(param3));
+			Serial.print(";");
 			break;
 
 		case 51:
-			Serial.write("You sent a char '3'.\t");
+			//Serial.write("You sent a char '3'.\t");
+			//param3 = Altitude.getEncoder().getMECount();
+			param3 = 2000;
+			Serial.print(Altitude.getEncoder().countToMinutes(param3));
+			Serial.print(";");
 			break;
 
 		case 52:

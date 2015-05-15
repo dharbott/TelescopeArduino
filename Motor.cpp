@@ -34,6 +34,48 @@ void Motor::setPWM(int intPWM){
 	analogWrite(pinPWM, intPWM);
 }
 
+
+//set direction
+//set initial speed
+//all using the pwm number
+void Motor::motorSetup(int intPWM){
+	if ((intPWM < 256) && (intPWM >= 0)) {
+		setClockwise(true);
+		currentPWM = intPWM;
+	}
+	else if ((intPWM > -256) && (intPWM <= 0)) {
+		setClockwise(false);
+		currentPWM = -intPWM;
+	}
+	else if (intPWM == 0){
+		digitalWrite(pinInputA, HIGH);
+		digitalWrite(pinInputB, HIGH);
+		currentPWM = intPWM;
+	}
+}
+
+
+//start motor
+void Motor::motorStart(){
+	analogWrite(pinPWM, currentPWM);
+}
+
+
+//stop motor
+//set/check flag
+
+//change speed
+void Motor::changePWM(int intPWM){
+
+}
+
+//not sure how to brake a dc motor
+void Motor::brake(){
+	digitalWrite(pinInputA, HIGH);
+	digitalWrite(pinInputB, HIGH);
+	setPWM(0);
+}
+
 //sets motor direction using booleans
 void Motor::setClockwise(bool cclockwise){
 	clockwise = cclockwise;
@@ -67,6 +109,24 @@ void Motor::motorGo(int intPWM){
 		setPWM(0);
 	}
 }
+
+//Let's REDO the motorGO function, and split it into two
+//independent functions motorGOCW, motorGOCCW
+
+
+
+void Motor::motorGo(int intPWM){
+	if ((intPWM < 256) && (intPWM >= 0)) {
+		setPWM(intPWM);
+	}
+	else if (intPWM == 0){
+		//apply motor brakes?
+		digitalWrite(pinInputA, HIGH);
+		digitalWrite(pinInputB, HIGH);
+		setPWM(0);
+	}
+}
+
 
 //fewer checks, does it really help? not really
 //void Motor::motorGo2(int intPWM){
