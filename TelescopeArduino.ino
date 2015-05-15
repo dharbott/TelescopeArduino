@@ -29,6 +29,17 @@
 #define LSOUT A3
 #define LSOVR A0
 
+// ByteArray, my internal command queue
+// queue works, Arduino Serial buffer still limited at 62 bytes
+// 00000;11111;22222;33333;44444;55555;66666;77777;88888;99999;
+// AND, I wanted the command buffer to be fast and stable
+byte byteArray[bufflen][codelen] = {
+};
+
+int stringCount = 0;
+int i = 0;
+int current = 0;
+int nextIn = 0;
 
 Axis Azimuth = Axis(
 	Motor(MD2_PWM, MD2_INA, MD2_INB),
@@ -39,18 +50,6 @@ Axis Altitude = Axis(
 	Motor(MD1_PWM, MD1_INA, MD1_INB),
 	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
 );
-
-
-// ByteArray, my internal command queue
-// queue works, Arduino Serial buffer still limited at 62 bytes
-// 00000;11111;22222;33333;44444;55555;66666;77777;88888;99999;
-byte byteArray[bufflen][codelen] = { 
-};
-
-int stringCount = 0;
-int i = 0;
-int current = 0;
-int nextIn = 0;
 
 
 //TODO : DOUBLE CHECK PIN NUMBERS
@@ -99,30 +98,6 @@ void setup() {
   //delay(1000);
 
   //Serial.println("start");
-}
-
-
-//round robin index, array position of current instruction
-void currentPlus() {
-  current = current + 1;
-  if (current >= bufflen)
-    current = 0;
-}
-
-//round robin index, a spot to insert next instruction
-void nextInPlus() {
-  nextIn = nextIn + 1;
-  if (nextIn >= bufflen)
-    nextIn = 0;
-}
-
-
-void timeCheck() {
-  unsigned long timestart = micros();
-  unsigned long timeend = micros() - timestart;
-  Serial.print("TIME : ");
-  Serial.print(timeend);
-  Serial.print(" microseconds.\n"); 
 }
 
 
@@ -244,6 +219,15 @@ void loop() {
 }
 
 
+void timeCheck() {
+	unsigned long timestart = micros();
+	unsigned long timeend = micros() - timestart;
+	Serial.print("TIME : ");
+	Serial.print(timeend);
+	Serial.print(" microseconds.\n");
+}
+
+
 //void serialReady()
 //{
 //  Serial.write(Serial.available());
@@ -252,30 +236,46 @@ void loop() {
 //}
 
 
+//round robin index, array position of current instruction
+void currentPlus() {
+	current = current + 1;
+	if (current >= bufflen)
+		current = 0;
+}
+
+//round robin index, a spot to insert next instruction
+void nextInPlus() {
+	nextIn = nextIn + 1;
+	if (nextIn >= bufflen)
+		nextIn = 0;
+}
+
+
+
 //SERIALEVENT() is run after every loop() returns
 //This function will feed bytes from Serial Stream into
 //a buffer, to be stored internally, because Serial buffer
 //is only 63 bytes, or 63 chars
 void serialEvent()
 {
-  byte inByte;
+	byte inByte;
 
-  //keep adding instructions as long as there are bytes in serial available
-  //and while there is at least one empty spot for an instruction in the buffer
-  //this stringCount+1, because nextIn points to an empty spot in the buffer
-  while (Serial.available() && ((stringCount+1) < bufflen)){
+	//keep adding instructions as long as there are bytes in serial available
+	//and while there is at least one empty spot for an instruction in the buffer
+	//this stringCount+1, because nextIn points to an empty spot in the buffer
+	while (Serial.available() && ((stringCount + 1) < bufflen)){
 
-    inByte = Serial.read();
+		inByte = Serial.read();
 
-    if (inByte == ';') {
-      nextInPlus();
-      stringCount++;
-      i = 0;
-    }
-    else {
-      byteArray[nextIn][i++] = inByte;
-    }
-  }
+		if (inByte == ';') {
+			nextInPlus();
+			stringCount++;
+			i = 0;
+		}
+		else {
+			byteArray[nextIn][i++] = inByte;
+		}
+	}
 }
 
 
@@ -291,9 +291,9 @@ void serialEvent()
 //on the altitude local coordinate system
 unsigned int getParam1(byte bytesIn[])
 {
-  unsigned int retval = bytesIn[1];
-  retval += bytesIn[2] << 8;
-  return (retval);
+	unsigned int retval = bytesIn[1];
+	retval += bytesIn[2] << 8;
+	return (retval);
 }
 
 
@@ -305,9 +305,7 @@ unsigned int getParam1(byte bytesIn[])
 //on the azimuth local coordinate system
 unsigned int getParam2(byte bytesIn[])
 {
-  unsigned int retval = bytesIn[3];
-  retval += bytesIn[4] << 8;
-  return (retval);
+	unsigned int retval = bytesIn[3];
+	retval += bytesIn[4] << 8;
+	return (retval);
 }
-
-
