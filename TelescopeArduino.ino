@@ -96,9 +96,9 @@ void setup() {
   pinMode(13, OUTPUT);
   digitalWrite(13,LOW);
 
-  delay(1000);
+  //delay(1000);
 
-  Serial.println("start");
+  //Serial.println("start");
 }
 
 
@@ -133,19 +133,23 @@ void loop() {
 
   int param1 = 0;
   int param2 = 0;
+  int param3 = 0;
 
   if (current!=nextIn)
   {     
-    Serial.write("instructions left : ");
-    Serial.print(stringCount);
-    Serial.write('\t');
+    //Serial.write("#Instructions left : [");
+    //Serial.print(stringCount);
+    //Serial.write("] - Processing...;\t");
 
     switch (byteArray[current][0])
     {
     case 48:
-      Serial.write("You sent a char '0'.\t");
-	  Serial.write("Status - Azimuth :\t");
-	  Serial.print(Azimuth.getEncoder().getMECount());
+      //Serial.write("You sent a char '0'.\n");
+	  //Serial.write("Status - Azimuth :\t");
+
+	  param3 = Azimuth.getEncoder().getMECount();
+	  Serial.print(Azimuth.getEncoder().countToMinutes(param3));
+	  Serial.print(";");
       break;
 
     case 49:
@@ -157,45 +161,49 @@ void loop() {
       param1 = getParam1(byteArray[current]);
       param2 = getParam2(byteArray[current]);
 
-      Serial.write("You sent a char '1', GOTO Command.\t");
-      Serial.print ("P1 Azimuth : ");
-      Serial.print (param1);
+	  //Serial.write("'1' GOTO Command - ");
+      Serial.print ("\tP1 Azimuth : ");
+	  Serial.print (param1);
+	  //Serial.print (Azimuth.getEncoder().minutesToCount(param1));
       Serial.print ("\tP2 Altitude : ");
-      Serial.print (param2);
+	  Serial.print (param2);
+	  //Serial.print (Azimuth.getEncoder().minutesToCount(param2));
+	  Serial.print(";");
 
 	  Azimuth.motorGO(Azimuth.getEncoder().minutesToCount(param1));
-
-	  //Azimuth.motorGO((Azimuth.getEncoder().mintesToCount(param1) + 100) % 4096);
-
+	  
 	  //Altitude magnetic encoder not implement yet
 	  //Azimuth.motorGO(Azimuth.getEncoder().mintesToCount(param1));
 
       break;
 
     case 50:
-		//CASE 50, my GOTO Function 2, probably the Clockwise
-		//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-		//This function only makes it rotate clockwise
+
 
       Serial.write("You sent a char '2'.\t");
       break;
 
     case 51:
-		//CASE 51, my GOTO Function 3, probably the CounterClockwise
-		//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-		//This function only makes it rotate counterclockwise
+
 
       Serial.write("You sent a char '3'.\t");
       break;
 
     case 52:
-      Serial.write("You sent a char '4'.\t");
+		//CASE 52, my GOTO Function 2, probably the Clockwise
+		//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+		//This function only makes it rotate clockwise 100 pts
+
+      Serial.write("You sent a char '4'.\n");
 	  Serial.write("Moving Azimuth clockwise by 100 points.\t");
 	  Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 100) % 4096);
       break;
 
     case 53:
-      Serial.write("You sent a char '5'.\t");
+		//CASE 53, my GOTO Function 3, probably the CounterClockwise
+		//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+		//This function only makes it rotate counterclockwise 100 pts
+      Serial.write("You sent a char '5'.\n");
 	  Serial.write("Moving Azimuth counterclockwise by 100 points.\t");
 	  Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 3996) % 4096);
       break;
@@ -229,7 +237,8 @@ void loop() {
     currentPlus();
     stringCount--;
 
-    Serial.write(";\n");
+    //Serial.write(";\n");
+	Serial.write("\n");
   }
   delay(500);
 }
@@ -275,27 +284,29 @@ void serialEvent()
 //output is "12851;"
 //which is 00110010 00110011
 //corresponding to "50" "51" 
+////SOMEHOW I GOT IT WRONG, LET"S REVERSE IT
 
 //Version 1: Parameter 1 is typically a 16-bit integer
 //representing computed 'arcminutes' that represent a position
 //on the altitude local coordinate system
 unsigned int getParam1(byte bytesIn[])
 {
-  unsigned int retval = bytesIn[2];
-  retval += bytesIn[1] << 8;
+  unsigned int retval = bytesIn[1];
+  retval += bytesIn[2] << 8;
   return (retval);
 }
 
 
 //ENDIAN-NESS IS IMPORTANT
+////SOMEHOW I GOT IT WRONG, LET"S REVERSE IT
 
 //Version 1: Parameter 2 is typically a 16-bit integer
 //representing computed 'arcminutes' that represent a position
 //on the azimuth local coordinate system
 unsigned int getParam2(byte bytesIn[])
 {
-  unsigned int retval = bytesIn[4];
-  retval += bytesIn[3] << 8;
+  unsigned int retval = bytesIn[3];
+  retval += bytesIn[4] << 8;
   return (retval);
 }
 
