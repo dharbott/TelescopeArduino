@@ -92,7 +92,7 @@ int MagneticEncoder::getMECount() {
 // dividing by a float will yield the best accuracy
 // but then again this is just a guess
 float MagneticEncoder::countToAngleFloat(int input){
-	long temp = input;
+	long temp = input % maxCount;
 	return ((temp * 45) / 512.0);
 	//return ((input / 4096.0) * 360.0);
 }
@@ -102,14 +102,14 @@ float MagneticEncoder::countToAngleFloat(int input){
 // but then again this is just a guess
 int MagneticEncoder::countToMinutes(int input)
 {
-	long temp = input;
+	long temp = input % maxCount;
 	return ((temp * 675) / 128.0);
 	//return (input / 4096.0) * 21600.0;
 }
 
 int MagneticEncoder::minutesToCount(int input)
 {
-	long temp = input;
+	long temp = input % maxCount;
 	return ((temp * 128) / 675.0);
 	//return ((input / 21600.0) * 4096.0);
 }
@@ -139,4 +139,8 @@ void MagneticEncoder::setOffset(int input) {
 
 int MagneticEncoder::getOffset() {
 	return offset;
+}
+
+int MagneticEncoder::getMaxCount() {
+	return maxCount;
 }

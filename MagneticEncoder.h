@@ -23,6 +23,7 @@ public:
 	unsigned int readPosition();
 	//WRAPPER, not necessary??
 	int getMECount();
+	int getMaxCount();
 
 	void setOffset(int offset);
 	int getOffset();

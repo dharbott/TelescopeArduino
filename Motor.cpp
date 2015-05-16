@@ -8,6 +8,7 @@ Motor::Motor()
 	//setPWM(0);
 	setClockwise(true);
 	currentPWM = -1;
+	moving = false;
 }
 
 Motor::Motor(int ppinPWM, int ppinInputA, int ppinInputB){
@@ -17,10 +18,11 @@ Motor::Motor(int ppinPWM, int ppinInputA, int ppinInputB){
 		setPWM(0);
 		setClockwise(true);
 		currentPWM = 0;
+		moving = false;
 }
 
 Motor::~Motor(){
-		setPWM(0);
+		motorBrake();
 }
 
 //change it to STRING LATER
@@ -35,9 +37,8 @@ void Motor::setPWM(int intPWM){
 }
 
 
-//set direction
-//set initial speed
-//all using the pwm number
+//set direction & set initial speed
+//all using the pwm number, +/- CW/CCW
 void Motor::motorSetup(int intPWM){
 	if ((intPWM < 256) && (intPWM >= 0)) {
 		setClockwise(true);
@@ -48,9 +49,7 @@ void Motor::motorSetup(int intPWM){
 		currentPWM = -intPWM;
 	}
 	else if (intPWM == 0){
-		digitalWrite(pinInputA, HIGH);
-		digitalWrite(pinInputB, HIGH);
-		currentPWM = intPWM;
+		motorBrake();
 	}
 }
 
@@ -64,17 +63,26 @@ void Motor::motorStart(){
 //stop motor
 //set/check flag
 
-//change speed
-void Motor::changePWM(int intPWM){
 
+//change speed - involves some assumptions
+//such as the PWM signal is always positive and within (0-255)
+//only setting 'new' PWM signal if it's
+//not the same as the current PWM signal
+void Motor::changePWM(int intPWM){
+	if (currentPWM != intPWM) {
+		currentPWM = intPWM;
+		setPWM(currentPWM);
+	}
 }
 
+
 //not sure how to brake a dc motor
-void Motor::brake(){
+void Motor::motorBrake(){
 	digitalWrite(pinInputA, HIGH);
 	digitalWrite(pinInputB, HIGH);
 	setPWM(0);
 }
+
 
 //sets motor direction using booleans
 void Motor::setClockwise(bool cclockwise){
@@ -83,10 +91,12 @@ void Motor::setClockwise(bool cclockwise){
 	digitalWrite(pinInputB, !clockwise);
 }
 
+
 //returns the state of member variable
 bool Motor::isClockwise(){
 	return clockwise;
 }
+
 
 //============================================
 
@@ -110,12 +120,10 @@ void Motor::motorGo(int intPWM){
 	}
 }
 
+
 //Let's REDO the motorGO function, and split it into two
 //independent functions motorGOCW, motorGOCCW
-
-
-
-void Motor::motorGo(int intPWM){
+void Motor::motorGo2(int intPWM){
 	if ((intPWM < 256) && (intPWM >= 0)) {
 		setPWM(intPWM);
 	}

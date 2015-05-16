@@ -14,12 +14,10 @@ class Axis {
 private:
 	Motor motor;
 	MagneticEncoder encoder;
-	String name;
+	int target;
+	bool clockwise;
 
 public:
-	//THE BIG QUESTION IS: Does it pass classes into
-	//constructor by reference? or do I have to use
-	//pointers?
 	Axis();
 	Axis(Motor myMotor, MagneticEncoder myEncoder);
 	~Axis();
@@ -27,8 +25,11 @@ public:
 	Motor getMotor();
 	MagneticEncoder getEncoder();
 
-	void motorGO(int inputMECount);
+	void motorSetup(int inputMECount);
+
 	void motorGOCW(int inputMECount);
 	void motorGOCCW(int inputMECount);
+
+	bool processME();
 };
 #endif

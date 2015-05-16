@@ -6,12 +6,14 @@ Axis::Axis()
 	//not the best idea
 	motor = Motor();
 	encoder = MagneticEncoder();
+	target = 0;
 }
 
 Axis::Axis(Motor myMotor, MagneticEncoder myEncoder)
 {
 	motor = myMotor;
 	encoder = myEncoder;
+	target = 0;
 }
 
 Axis::~Axis()
@@ -31,22 +33,39 @@ MagneticEncoder Axis::getEncoder()
 
 
 //Is there a better design?
-void Axis::motorGO(int inputMECount) {
+void Axis::motorSetup(int inputMECount) {
 
-	int temp1 = encoder.getCWDistance(encoder.getMECount(), inputMECount);
-	int temp2 = encoder.getCCWDistance(encoder.getMECount(), inputMECount);
+	int temp0 = abs(inputMECount);
 
-	if (temp1 < temp2)
-	{
-		motorGOCW(inputMECount);
-	}
-	else
-	{
-		motorGOCCW(inputMECount);
-	}
+	target = temp0;
+
+	int temp1 = encoder.getCWDistance(encoder.getMECount(), temp0);
+	int temp2 = encoder.getCCWDistance(encoder.getMECount(), temp0);
+
+	motor.setClockwise(temp1 <= temp2);
 }
 
 
+bool Axis::processME() {
+	int temppwm = 0;
+	int distance = 0;
+
+	if (distance >= 100) {
+		temppwm = -255;
+	}
+	else if (distance >= 40) {
+		temppwm = -100;
+	}
+	else if (distance >= 1) {
+		temppwm = -20;
+	}
+	else {
+	}
+
+	motor.setPWM(temppwm);
+	
+	return true;
+}
 void Axis::motorGOCW(int inputMECount) {
 	
 	int distance;
@@ -88,11 +107,4 @@ void Axis::motorGOCCW(int inputMECount) {
 		delay(3);
 	}
 	motor.motorGo(0);
-}
-
-bool Axis::processME() {
-
-
-
-	return true;
 }
