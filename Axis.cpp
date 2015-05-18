@@ -7,6 +7,7 @@ Axis::Axis()
 	motor = Motor();
 	encoder = MagneticEncoder();
 	target = 0;
+	currentPWM = 0;
 }
 
 Axis::Axis(Motor myMotor, MagneticEncoder myEncoder)
@@ -14,6 +15,7 @@ Axis::Axis(Motor myMotor, MagneticEncoder myEncoder)
 	motor = myMotor;
 	encoder = myEncoder;
 	target = 0;
+	currentPWM = 0;
 }
 
 Axis::~Axis()
@@ -31,80 +33,69 @@ MagneticEncoder Axis::getEncoder()
 	return encoder;
 }
 
+int Axis::getPWM()
+{
+	return currentPWM;
+}
 
 //Is there a better design?
-void Axis::motorSetup(int inputMECount) {
+//determine if it's shorter to go
+//clockwise or counterclockwise
+//then sets the motor direction
+//-executed only once per move command
+void Axis::motorSetup(int inputMECount)
+{
 
 	int temp0 = abs(inputMECount);
+	int temp1 = encoder.getMECount();
 
+	int temp2 = encoder.getCWDistance(temp1, temp0);
+	int temp3 = encoder.getCCWDistance(temp1, temp0);
+	
 	target = temp0;
-
-	int temp1 = encoder.getCWDistance(encoder.getMECount(), temp0);
-	int temp2 = encoder.getCCWDistance(encoder.getMECount(), temp0);
-
-	motor.setClockwise(temp1 <= temp2);
+	clockwise = (temp2 <= temp3);
+	motor.setClockwise(clockwise);
 }
 
 
-bool Axis::processME() {
-	int temppwm = 0;
+//looking for better ways to do this
+bool Axis::processME()
+{
+
 	int distance = 0;
-
-	if (distance >= 100) {
-		temppwm = -255;
-	}
-	else if (distance >= 40) {
-		temppwm = -100;
-	}
-	else if (distance >= 1) {
-		temppwm = -20;
-	}
-	else {
-	}
-
-	motor.setPWM(temppwm);
+	int current = encoder.getMECount();
 	
+	if (clockwise)
+		distance = encoder.getCWDistance(current, target);
+	else
+		distance = encoder.getCCWDistance(current, target);
+
+	if (distance >= 100)
+	{
+		updatePWM(255);
+	}
+	//small exception where this can fail
+	else if (distance >= 1)
+	{
+		//value jumps to 100,
+		//then jumps to 80,
+		//then jumps to 60, 40, 20
+		updatePWM((distance / 20) * 20 + 20);
+	}
+	else
+	{
+		updatePWM(0);
+		return false;
+	}
 	return true;
 }
-void Axis::motorGOCW(int inputMECount) {
-	
-	int distance;
-	int tempspeed;
 
-	while (true) {
-		distance = encoder.getCWDistance(encoder.getMECount(), inputMECount);
-		if (distance >= 100)
-			tempspeed = 255;
-		else if (distance >= 40)
-			tempspeed = 100;
-		else if (distance >= 1)
-			tempspeed = 20;
-		else
-			break;
-		motor.motorGo(tempspeed);
-		delay(3);
+
+void Axis::updatePWM(int intPWM)
+{
+	if (intPWM != currentPWM)
+	{
+		currentPWM = intPWM;
+		motor.setPWM(currentPWM);
 	}
-	motor.motorGo(0);
-}
-
-//SAVE MEMORY - MERGE SIMILAR FUNCTIONS
-void Axis::motorGOCCW(int inputMECount) {
-	
-	int distance;
-	int tempspeed;
-
-	while (true) {
-		distance = encoder.getCCWDistance(encoder.getMECount(), inputMECount);
-		if (distance >= 100)
-			tempspeed = -255;
-		else if (distance >= 40)
-			tempspeed = -100;
-		else if (distance >= 1)
-			tempspeed = -20;
-		else
-			break;
-		motor.motorGo(tempspeed);
-		delay(3);
-	}
-	motor.motorGo(0);
 }

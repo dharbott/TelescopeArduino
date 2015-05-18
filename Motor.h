@@ -14,6 +14,8 @@ private:
 		bool clockwise;
 		int currentPWM;
 		bool moving;
+
+		void rawPWM(int intPWM); //don't use
 		
 public:
 		Motor();
@@ -21,20 +23,14 @@ public:
 		~Motor();
 		
 		long pinOut();	//verified, change to String later
-		
+
+		void motorGo(int intPWM);	//verified
 		void setPWM(int intPWM);	//verified
+		int getPWM();
 
 		void setClockwise(bool clockwise);	//verified
 		bool isClockwise(); 
 		
-        void motorGo(int intPWM);	//verified
-		void motorGo2(int intPWM);
-
-		// another way of handling motor commands
-		void motorSetup(int intPWM);
-		void motorStart();
-		void motorBrake();
-		void changePWM(int intPWM);
 };
  
 #endif

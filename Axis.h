@@ -17,6 +17,11 @@ private:
 	int target;
 	bool clockwise;
 
+	int currentPWM;
+	int nextPWM;
+	
+	void updatePWM(int intPWM);
+
 public:
 	Axis();
 	Axis(Motor myMotor, MagneticEncoder myEncoder);
@@ -26,10 +31,9 @@ public:
 	MagneticEncoder getEncoder();
 
 	void motorSetup(int inputMECount);
-
-	void motorGOCW(int inputMECount);
-	void motorGOCCW(int inputMECount);
-
 	bool processME();
+	int getPWM();
+	
 };
+
 #endif

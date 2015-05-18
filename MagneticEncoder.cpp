@@ -27,7 +27,8 @@ MagneticEncoder::MagneticEncoder(int ppinSelect, int ppinClock, int ppinData, in
 	offset = 0;
 }
 
-MagneticEncoder::~MagneticEncoder() {
+MagneticEncoder::~MagneticEncoder()
+{
 }
 
 //read the current angular position, binary, 16 bits
@@ -81,7 +82,8 @@ byte MagneticEncoder::shiftIn()
 
 
 //WRAPPER, not necessary??
-int MagneticEncoder::getMECount() {
+int MagneticEncoder::getMECount()
+{
 	return readPosition();
 }
 
@@ -91,7 +93,8 @@ int MagneticEncoder::getMECount() {
 // -I think using a long, multiplying by an int, then
 // dividing by a float will yield the best accuracy
 // but then again this is just a guess
-float MagneticEncoder::countToAngleFloat(int input){
+float MagneticEncoder::countToAngleFloat(int input)
+{
 	long temp = input % maxCount;
 	return ((temp * 45) / 512.0);
 	//return ((input / 4096.0) * 360.0);
@@ -133,14 +136,17 @@ int MagneticEncoder::getCCWDistance(int current, int target) {
 
 //WE"RE NOT TOUCHING OFFSETS YET
 //TODO LATER
-void MagneticEncoder::setOffset(int input) {
+void MagneticEncoder::setOffset(int input)
+{
 	offset = input;
 }
 
-int MagneticEncoder::getOffset() {
+int MagneticEncoder::getOffset()
+{
 	return offset;
 }
 
-int MagneticEncoder::getMaxCount() {
+int MagneticEncoder::getMaxCount()
+{
 	return maxCount;
 }

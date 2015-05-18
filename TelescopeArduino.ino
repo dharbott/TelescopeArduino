@@ -52,7 +52,8 @@ Axis Altitude = Axis(
 
 
 //TODO : DOUBLE CHECK PIN NUMBERS
-void setup() {
+void setup()
+{
 
 	pinMode(SELECT_PIN, OUTPUT);
 	pinMode(CLOCK_PIN, OUTPUT);
@@ -100,7 +101,8 @@ void setup() {
 }
 
 
-void loop() {
+void loop()
+{
 
 	//360 degrees/rev * 60 minutes/degree = 21600 minutes/rev
 	//21600 fits in 16-bits, a 2-byte integer on Arduino
@@ -130,6 +132,9 @@ void loop() {
 			//This function determines whether going clockwise or counter
 			//is the shortest path, and takes it
 
+			if (motorsBusy()) return; //motor(s) busy with a command
+
+			//if motor is idle, execute command
 			param1 = getParam1(byteArray[current]);
 			param2 = getParam2(byteArray[current]);
 
@@ -142,7 +147,8 @@ void loop() {
 			//Serial.print (Azimuth.getEncoder().minutesToCount(param2));
 			Serial.print(";");
 
-			Azimuth.motorGO(Azimuth.getEncoder().minutesToCount(param1));
+			Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
+			Azimuth.processME();
 
 			//Altitude magnetic encoder not implement yet
 			//Azimuth.motorGO(Azimuth.getEncoder().mintesToCount(param1));
@@ -169,18 +175,25 @@ void loop() {
 			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
 			//This function only makes it rotate clockwise 100 pts
 
+			if (motorsBusy()) return; //motor(s) busy with a command
+
 			Serial.write("You sent a char '4'.\n");
 			Serial.write("Moving Azimuth clockwise by 100 points.\t");
-			Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 100) % 4096);
+			Azimuth.motorSetup((Azimuth.getEncoder().getMECount() + 100) % 4096);
+			Azimuth.processME();
 			break;
 
 		case 53:
 			//CASE 53, my GOTO Function 3, probably the CounterClockwise
 			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
 			//This function only makes it rotate counterclockwise 100 pts
+
+			if (motorsBusy()) return; //motor(s) busy with a command
+
 			Serial.write("You sent a char '5'.\n");
 			Serial.write("Moving Azimuth counterclockwise by 100 points.\t");
-			Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 3996) % 4096);
+			Azimuth.motorSetup((Azimuth.getEncoder().getMECount() + 3996) % 4096);
+			Azimuth.processME();
 			break;
 
 		case 54:
@@ -218,8 +231,34 @@ void loop() {
 	delay(500);
 }
 
+bool motorsBusy()
+{
+	int azmPWM = Azimuth.getPWM();
+	int altPWM = Altitude.getPWM();
 
-void timeCheck() {
+	if ((azmPWM != 0) && (altPWM != 0))
+	{
+		Azimuth.processME();
+		Altitude.processME();
+	}
+	else if ((azmPWM != 0) && (altPWM == 0))
+	{
+		Azimuth.processME();
+	}
+	else if ((azmPWM == 0) && (altPWM != 0))
+	{
+		Altitude.processME();
+	}
+	else
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void timeCheck()
+{
 	unsigned long timestart = micros();
 	unsigned long timeend = micros() - timestart;
 	Serial.print("TIME : ");
@@ -237,14 +276,16 @@ void timeCheck() {
 
 
 //round robin index, array position of current instruction
-void currentPlus() {
+void currentPlus()
+{
 	current = current + 1;
 	if (current >= bufflen)
 		current = 0;
 }
 
 //round robin index, a spot to insert next instruction
-void nextInPlus() {
+void nextInPlus()
+{
 	nextIn = nextIn + 1;
 	if (nextIn >= bufflen)
 		nextIn = 0;
@@ -263,16 +304,18 @@ void serialEvent()
 	//keep adding instructions as long as there are bytes in serial available
 	//and while there is at least one empty spot for an instruction in the buffer
 	//this stringCount+1, because nextIn points to an empty spot in the buffer
-	while (Serial.available() && ((stringCount + 1) < bufflen)) {
-
+	while (Serial.available() && ((stringCount + 1) < bufflen))
+	{
 		inByte = Serial.read();
 
-		if (inByte == ';') {
+		if (inByte == ';')
+		{
 			nextInPlus();
 			stringCount++;
 			i = 0;
 		}
-		else {
+		else
+		{
 			byteArray[nextIn][i++] = inByte;
 		}
 	}
