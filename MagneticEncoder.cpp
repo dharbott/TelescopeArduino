@@ -100,26 +100,24 @@ float MagneticEncoder::countToAngleFloat(int input)
 	//return ((input / 4096.0) * 360.0);
 }
 
-// I think using a long, multiplying by an int, then
-// dividing by a float will yield the best accuracy
-// but then again this is just a guess
+
 int MagneticEncoder::countToMinutes(int input)
 {
-	long temp = input % maxCount;
-	return ((temp * 675) / 128.0);
+	int temp = input % maxCount;
+	return ((temp * 675) / 128);
 	//return (input / 4096.0) * 21600.0;
 }
 
 int MagneticEncoder::minutesToCount(int input)
 {
-	long temp = input % maxCount;
-	return ((temp * 128) / 675.0);
+	int temp = input % 21600;
+	return ((temp * 128) / 675);
 	//return ((input / 21600.0) * 4096.0);
 }
 
 int MagneticEncoder::angleFloatToCount(float input)
 {
-	long temp = ((input * 512) / 45.0);
+	int temp = ((input * 512) / 45);
 	return temp;
 }
 

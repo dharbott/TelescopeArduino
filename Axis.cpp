@@ -99,3 +99,10 @@ void Axis::updatePWM(int intPWM)
 		motor.setPWM(currentPWM);
 	}
 }
+
+
+void Axis::abort()
+{
+	updatePWM(0);
+	return;
+}

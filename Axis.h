@@ -18,7 +18,7 @@ private:
 	bool clockwise;
 
 	int currentPWM;
-	int nextPWM;
+	unsigned int nextPWM;
 	
 	void updatePWM(int intPWM);
 
@@ -33,6 +33,8 @@ public:
 	void motorSetup(int inputMECount);
 	bool processME();
 	int getPWM();
+	
+	void abort();
 	
 };
 

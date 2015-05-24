@@ -50,6 +50,14 @@ Axis Altitude = Axis(
 	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
 	);
 
+struct bytepair
+{
+	//FORMAT    2    1
+	//binary 0010 0001
+	//       MSBy LSBy
+	byte MSByte;
+	byte LSByte;
+};
 
 //TODO : DOUBLE CHECK PIN NUMBERS
 void setup()
@@ -110,6 +118,7 @@ void loop()
 	int param1 = 0;
 	int param2 = 0;
 	int param3 = 0;
+	bytepair retval;
 
 	if (current != nextIn)
 	{
@@ -122,7 +131,15 @@ void loop()
 		case 48:
 			//Serial.write("You sent a char '0'.\n");
 			//Serial.write("Status - t");
-			Serial.write("Ready;");
+			if (motorsBusy())
+			{
+				Serial.write("Not Ready;");
+				return; //motor(s) busy with a command
+			}
+			else
+			{
+				Serial.write("Ready;");
+			}
 			
 			break;
 
@@ -149,25 +166,46 @@ void loop()
 
 			Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
 			Azimuth.processME();
-
+			
 			//Altitude magnetic encoder not implement yet
 			//Azimuth.motorGO(Azimuth.getEncoder().mintesToCount(param1));
 
 			break;
 
+		//TEST IT
 		case 50:
 			//Serial.write("You sent a char '2'.\t");
 			param3 = Azimuth.getEncoder().getMECount();
-			Serial.print(Azimuth.getEncoder().countToMinutes(param3));
-			Serial.print(";");
+			//Serial.print();
+			
+			//INSERT FUNCITON: INT TO BYTE PAIR - HERE
+			//ASSUME THAT COUNTTOMINUTES NEVER EXCEEDS 32K..
+			//ELSE CONVERTING TO BYTES AND SENDING IT WILL
+			//YIELD A PROBLEM WITH THE NEGATIVE BIT
+			param2 = Azimuth.getEncoder().countToMinutes(param3);
+
+			//Not sure if this check is necessary
+			if (param2 < 0)
+			{
+				Serial.write("-1");
+				Serial.write(";");
+				break;
+			}
+
+			Serial.write(param2 >> 8);
+			Serial.write(param2 & 255);
+			Serial.write(";");
 			break;
 
+		//TEST IT
 		case 51:
 			//Serial.write("You sent a char '3'.\t");
 			//param3 = Altitude.getEncoder().getMECount();
 			param3 = 2000;
-			Serial.print(Altitude.getEncoder().countToMinutes(param3));
-			Serial.print(";");
+			//Serial.print(Altitude.getEncoder().countToMinutes(param3));
+			
+			//INSERT FUNCITON: INT TO BYTE PAIR - HERE
+			Serial.write(";");
 			break;
 
 		case 52:
@@ -177,8 +215,8 @@ void loop()
 
 			if (motorsBusy()) return; //motor(s) busy with a command
 
-			Serial.write("You sent a char '4'.\n");
-			Serial.write("Moving Azimuth clockwise by 100 points.\t");
+			//Serial.write("You sent a char '4'.\n");
+			//Serial.write("Moving Azimuth clockwise by 100 points.\t");
 			Azimuth.motorSetup((Azimuth.getEncoder().getMECount() + 100) % 4096);
 			Azimuth.processME();
 			break;
@@ -190,8 +228,8 @@ void loop()
 
 			if (motorsBusy()) return; //motor(s) busy with a command
 
-			Serial.write("You sent a char '5'.\n");
-			Serial.write("Moving Azimuth counterclockwise by 100 points.\t");
+			//Serial.write("You sent a char '5'.\n");
+			//Serial.write("Moving Azimuth counterclockwise by 100 points.\t");
 			Azimuth.motorSetup((Azimuth.getEncoder().getMECount() + 3996) % 4096);
 			Azimuth.processME();
 			break;
@@ -200,16 +238,29 @@ void loop()
 			Serial.write("You sent a char '6'.\t");
 			break;
 
+		//UPDATE AZIMUTH
 		case 55:
-			Serial.write("You sent a char '7'.\t");
+			//Serial.write("You sent a char '7'.\t");
+			if (motorsBusy()) return; //motor(s) busy with a command
+			param1 = getParam1(byteArray[current]);
+			
 			break;
 
+		//UPDATE ALTITUDE
 		case 56:
-			Serial.write("You sent a char '8'.\t");
+			//Serial.write("You sent a char '8'.\t");
+			if (motorsBusy()) return; //motor(s) busy with a command
+			param1 = getParam1(byteArray[current]);
 			break;
-
+			
+		//TEST IT
 		case 57:
-			Serial.write("You sent a char '9'.\t");
+			//Serial.write("You sent a char '9'.\t");
+			if (motorsBusy())
+			{
+				Azimuth.abort();
+				Altitude.abort();
+			}
 			break;
 
 		default:
@@ -351,4 +402,14 @@ unsigned int getParam2(byte bytesIn[])
 	unsigned int retval = bytesIn[3];
 	retval += bytesIn[4] << 8;
 	return (retval);
+}
+
+
+bytepair intToBytes (int input)
+{
+	bytepair retval;
+	retval.MSByte = input >> 8;
+	retval.LSByte = input && 255;
+	return retval;
+
 }
