@@ -15,10 +15,9 @@ private:
 	Motor motor;
 	MagneticEncoder encoder;
 	int target;
+	int countOffset;
 	bool clockwise;
-
 	int currentPWM;
-	unsigned int nextPWM;
 	
 	void updatePWM(int intPWM);
 
@@ -33,6 +32,9 @@ public:
 	void motorSetup(int inputMECount);
 	bool processME();
 	int getPWM();
+
+	int getUserSyncCount();
+	void setUserSyncCount(int input);
 	
 	void abort();
 	

@@ -29,6 +29,19 @@
 #define LSOUT A3
 #define LSOVR A0
 
+
+/**
+struct bytepair {
+	//FORMAT    2    1
+	//binary 0010 0001
+	//       MSBy LSBy
+	byte MSByte;
+	byte LSByte;
+};
+
+typedef struct bytepair myBP;
+**/
+
 // ByteArray, my internal command queue
 // queue works, Arduino Serial buffer still limited at 62 bytes
 // 00000;11111;22222;33333;44444;55555;66666;77777;88888;99999;
@@ -50,14 +63,6 @@ Axis Altitude = Axis(
 	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
 	);
 
-struct bytepair
-{
-	//FORMAT    2    1
-	//binary 0010 0001
-	//       MSBy LSBy
-	byte MSByte;
-	byte LSByte;
-};
 
 //TODO : DOUBLE CHECK PIN NUMBERS
 void setup()
@@ -118,8 +123,7 @@ void loop()
 	int param1 = 0;
 	int param2 = 0;
 	int param3 = 0;
-	bytepair retval;
-
+		
 	if (current != nextIn)
 	{
 		//Serial.write("#Instructions left : [");
@@ -156,13 +160,13 @@ void loop()
 			param2 = getParam2(byteArray[current]);
 
 			//Serial.write("'1' GOTO Command - ");
-			Serial.print("P1 Azimuth : ");
-			Serial.print(param1);
+			//Serial.print("P1 Azimuth : ");
+			//Serial.print(param1);
 			//Serial.print (Azimuth.getEncoder().minutesToCount(param1));
-			Serial.print(", P2 Altitude : ");
-			Serial.print(param2);
+			//Serial.print(", P2 Altitude : ");
+			//Serial.print(param2);
 			//Serial.print (Azimuth.getEncoder().minutesToCount(param2));
-			Serial.print(";");
+			//Serial.print(";");
 
 			Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
 			Azimuth.processME();
@@ -175,6 +179,8 @@ void loop()
 		//TEST IT
 		case 50:
 			//Serial.write("You sent a char '2'.\t");
+
+			//DRIVER.
 			param3 = Azimuth.getEncoder().getMECount();
 			//Serial.print();
 			
@@ -185,12 +191,14 @@ void loop()
 			param2 = Azimuth.getEncoder().countToMinutes(param3);
 
 			//Not sure if this check is necessary
-			if (param2 < 0)
-			{
-				Serial.write("-1");
-				Serial.write(";");
-				break;
-			}
+			//but getMECount is unsigned integer...
+			//and countToMinutes is only multiply & divide
+			//if (param2 < 0)
+			//{
+			//	Serial.write("0");
+			//	Serial.write(";");
+			//	break;
+			//}
 
 			Serial.write(param2 >> 8);
 			Serial.write(param2 & 255);
@@ -238,24 +246,31 @@ void loop()
 			Serial.write("You sent a char '6'.\t");
 			break;
 
-		//UPDATE AZIMUTH
+		//SYNC USER COORD: AZIMUTH, SYNC USER COORD: ALTITUDE
 		case 55:
 			//Serial.write("You sent a char '7'.\t");
+
+			//DRIVER.SyncToAltAz(Azimuth,Altitude), parameters in "arcminutes"
 			if (motorsBusy()) return; //motor(s) busy with a command
-			param1 = getParam1(byteArray[current]);
-			
+
+			param1 = Azimuth.getEncoder().minutesToCount(getParam1(byteArray[current]));
+			param2 = Azimuth.getEncoder().minutesToCount(getParam2(byteArray[current]));
+						
+			Azimuth.setUserSyncCount(param1);
+			Altitude.setUserSyncCount(param2);
+
 			break;
 
 		//UPDATE ALTITUDE
 		case 56:
 			//Serial.write("You sent a char '8'.\t");
-			if (motorsBusy()) return; //motor(s) busy with a command
-			param1 = getParam1(byteArray[current]);
 			break;
 			
 		//TEST IT
 		case 57:
 			//Serial.write("You sent a char '9'.\t");
+
+			//DRIVER.ABORTSLEW()
 			if (motorsBusy())
 			{
 				Azimuth.abort();
@@ -300,7 +315,7 @@ bool motorsBusy()
 	{
 		Altitude.processME();
 	}
-	else
+	else //if ((azmPWM==0) && (altPWM==0))
 	{
 		return false;
 	}
@@ -405,6 +420,7 @@ unsigned int getParam2(byte bytesIn[])
 }
 
 
+/**
 bytepair intToBytes (int input)
 {
 	bytepair retval;
@@ -413,3 +429,4 @@ bytepair intToBytes (int input)
 	return retval;
 
 }
+**/
