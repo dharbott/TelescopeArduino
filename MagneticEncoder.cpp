@@ -103,21 +103,23 @@ float MagneticEncoder::countToAngleFloat(int input)
 
 int MagneticEncoder::countToMinutes(int input)
 {
-	int temp = input % maxCount;
+	long temp = input % maxCount;
 	return ((temp * 675) / 128);
 	//return (input / 4096.0) * 21600.0;
 }
 
+
 int MagneticEncoder::minutesToCount(int input)
 {
-	int temp = input % 21600;
+	long temp = input % 21600;
 	return ((temp * 128) / 675);
 	//return ((input / 21600.0) * 4096.0);
 }
 
+
 int MagneticEncoder::angleFloatToCount(float input)
 {
-	int temp = ((input * 512) / 45);
+	long temp = ((input * 512) / 45);
 	return temp;
 }
 

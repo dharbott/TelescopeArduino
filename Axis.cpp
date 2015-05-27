@@ -72,6 +72,10 @@ void Axis::motorSetup(int input)
 	int temp2 = encoder.getCWDistance(temp1, temp0);
 	int temp3 = encoder.getCCWDistance(temp1, temp0);
 	
+	Serial.print(temp1);
+	Serial.print(" - ");
+	Serial.println(temp0);
+
 	target = temp0;
 	clockwise = (temp2 <= temp3);
 	motor.setClockwise(clockwise);
@@ -158,9 +162,11 @@ void Axis::updatePWM(int intPWM)
 	}
 }
 
-
+// Sets the 
 void Axis::abort()
 {
 	updatePWM(0);
+	delay(100);
+	motorSetup(encoder.getMECount());
 	return;
 }

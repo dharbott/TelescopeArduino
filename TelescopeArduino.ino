@@ -40,13 +40,16 @@ struct bytepair {
 };
 
 typedef struct bytepair myBP;
+//Structs don't get procesed until after the functions
+//problematic Arduion compiler
 **/
 
-// ByteArray, my internal command queue
-// queue works, Arduino Serial buffer still limited at 62 bytes
-// 00000;11111;22222;33333;44444;55555;66666;77777;88888;99999;
-// AND, I wanted the command buffer to be fast and stable
+// ByteArray, my working internal command queue
+// Arduino Serial buffer still limited at 62 bytes
+// I wanted the command buffer to be fast and stable
 byte byteArray[bufflen][codelen] = {};
+
+// 00000;11111;22222;33333;44444;55555;66666;77777;88888;99999;
 
 int stringCount = 0;
 int i = 0;
@@ -111,6 +114,9 @@ void setup()
 	//delay(1000);
 
 	//Serial.println("start");
+
+	//Azimuth.abort();
+	//Altitude.abort();
 }
 
 
@@ -123,7 +129,13 @@ void loop()
 	int param1 = 0;
 	int param2 = 0;
 	int param3 = 0;
-		
+	float tempf;
+
+	//Do Async Motor Actions even if no commands in queue
+	//Azimuth.processME();
+	//Altitude.processME();
+	
+	//if the command queue is not empty
 	if (current != nextIn)
 	{
 		//Serial.write("#Instructions left : [");
@@ -132,13 +144,15 @@ void loop()
 
 		switch (byteArray[current][0])
 		{
-		case 48:
+
+		//CHECK IF SLEWING ASYNCHRONOUS, MOTORS BUSY
+		case '0':
 			//Serial.write("You sent a char '0'.\n");
-			//Serial.write("Status - t");
+
 			if (motorsBusy())
 			{
-				Serial.write("Not Ready;");
-				return; //motor(s) busy with a command
+				Serial.write("Motors Busy;");
+				//return; //motor(s) busy with a command
 			}
 			else
 			{
@@ -147,107 +161,86 @@ void loop()
 			
 			break;
 
-		case 49:
+		//SLEW SYNCHRONOUS, RETURN WHEN DONE
+		case '1':
 			//CASE 49, my GOTO Function 1
-			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-			//This function determines whether going clockwise or counter
-			//is the shortest path, and takes it
+			//parameters are integers - arcminutes
+			//motorSetup determines shortest path
+			//determines clockwise or counter-
 
-			if (motorsBusy()) return; //motor(s) busy with a command
+			//NEED TO REDO THIS motorBusy Business, doesn't make sense
+			//check logic, where and when to check if motor is busy
+
+			if (motorsBusy()) return; //motor(s) busy with a slew async! RETURN
 
 			//if motor is idle, execute command
 			param1 = getParam1(byteArray[current]);
 			param2 = getParam2(byteArray[current]);
 
-			//Serial.write("'1' GOTO Command - ");
-			//Serial.print("P1 Azimuth : ");
-			//Serial.print(param1);
-			//Serial.print (Azimuth.getEncoder().minutesToCount(param1));
-			//Serial.print(", P2 Altitude : ");
-			//Serial.print(param2);
-			//Serial.print (Azimuth.getEncoder().minutesToCount(param2));
-			//Serial.print(";");
-
 			Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
-			Azimuth.processME();
+
+			//Altitude magnetic encoder not implement yet
+			//Altitude.motorGO(Altitude.getEncoder().mintesToCount(param2));
+			
+			//LOOP WHILE still processing
+			while (Azimuth.processME());
 			
 			//Altitude magnetic encoder not implement yet
-			//Azimuth.motorGO(Azimuth.getEncoder().mintesToCount(param1));
+			//while (Azimuth.processME() || Altitude.processME());
+
+			Serial.write("Slewing (Sync) Finished;");
 
 			break;
 
-		//TEST IT
-		case 50:
+		//DRIVER.Azimuth get
+		case '2':
 			//Serial.write("You sent a char '2'.\t");
 
-			//DRIVER.
-			param3 = Azimuth.getEncoder().getMECount();
+			param2 = Azimuth.getEncoder().getMECount();
 			//Serial.print();
 			
 			//INSERT FUNCITON: INT TO BYTE PAIR - HERE
 			//ASSUME THAT COUNTTOMINUTES NEVER EXCEEDS 32K..
 			//ELSE CONVERTING TO BYTES AND SENDING IT WILL
 			//YIELD A PROBLEM WITH THE NEGATIVE BIT
-			param2 = Azimuth.getEncoder().countToMinutes(param3);
+			tempf = Azimuth.getEncoder().countToAngleFloat(param2);
 
-			//Not sure if this check is necessary
-			//but getMECount is unsigned integer...
-			//and countToMinutes is only multiply & divide
-			//if (param2 < 0)
-			//{
-			//	Serial.write("0");
-			//	Serial.write(";");
-			//	break;
-			//}
-
-			Serial.write(param2 >> 8);
-			Serial.write(param2 & 255);
+			Serial.print(tempf);
+			//Serial.print(param2 >> 8);
+			//Serial.print(param2 & 255);
 			Serial.write(";");
 			break;
 
-		//TEST IT
-		case 51:
+		//DRIVER.Altitude get
+		case '3':
 			//Serial.write("You sent a char '3'.\t");
-			//param3 = Altitude.getEncoder().getMECount();
-			param3 = 2000;
+			param2 = Altitude.getEncoder().getMECount();
+			//param3 = 2000;
 			//Serial.print(Altitude.getEncoder().countToMinutes(param3));
-			
+			tempf = Altitude.getEncoder().countToAngleFloat(param2);
+
+			Serial.print(tempf);
 			//INSERT FUNCITON: INT TO BYTE PAIR - HERE
+			//Serial.write(param3 >> 8);
+			//Serial.write(param3 & 255);
+			//Serial.print(param3);
 			Serial.write(";");
 			break;
 
-		case 52:
-			//CASE 52, my GOTO Function 2, probably the Clockwise
-			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-			//This function only makes it rotate clockwise 100 pts
-
-			if (motorsBusy()) return; //motor(s) busy with a command
-
+		case '4':
 			//Serial.write("You sent a char '4'.\n");
-			//Serial.write("Moving Azimuth clockwise by 100 points.\t");
-			Azimuth.motorSetup((Azimuth.getEncoder().getMECount() + 100) % 4096);
-			Azimuth.processME();
 			break;
 
-		case 53:
-			//CASE 53, my GOTO Function 3, probably the CounterClockwise
-			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-			//This function only makes it rotate counterclockwise 100 pts
-
-			if (motorsBusy()) return; //motor(s) busy with a command
-
+		case '5':
 			//Serial.write("You sent a char '5'.\n");
-			//Serial.write("Moving Azimuth counterclockwise by 100 points.\t");
-			Azimuth.motorSetup((Azimuth.getEncoder().getMECount() + 3996) % 4096);
-			Azimuth.processME();
 			break;
 
-		case 54:
-			Serial.write("You sent a char '6'.\t");
+		case '6':
+			//Serial.write("You sent a char '6'.\t");
 			break;
 
 		//SYNC USER COORD: AZIMUTH, SYNC USER COORD: ALTITUDE
-		case 55:
+		case '7':
 			//Serial.write("You sent a char '7'.\t");
 
 			//DRIVER.SyncToAltAz(Azimuth,Altitude), parameters in "arcminutes"
@@ -259,24 +252,49 @@ void loop()
 			Azimuth.setUserSyncCount(param1);
 			Altitude.setUserSyncCount(param2);
 
+			Serial.write("Sync User Coords (Azm, Alt), Started;");
+
 			break;
 
-		//UPDATE ALTITUDE
-		case 56:
+		//SLEW ASYNCHRONOUS, RETURN IMMEDIATELY
+		case '8':
 			//Serial.write("You sent a char '8'.\t");
-			break;
-			
-		//TEST IT
-		case 57:
-			//Serial.write("You sent a char '9'.\t");
 
-			//DRIVER.ABORTSLEW()
+			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+			//This function determines whether going clockwise or counter
+			//is the shortest path, and takes it
+
+
+			//The question is, should it consume the command? yes
+			if (motorsBusy()) return; //motor(s) busy with a command
+
+			//if motor is idle, execute command
+			param1 = getParam1(byteArray[current]);
+			param2 = getParam2(byteArray[current]);
+
+			Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
+			//Altitude.motorSetup(Altitude.getEncoder().mintesToCount(param2));
+
+			Serial.write("Slewing Async Started;");
+			break;
+
+			//SO, is there anything there to notify the Driver that
+			//SlewAsync finished? Not yet....
+			
+		//DRIVER.ABORTSLEW()
+		case '9':
+			//Serial.write("You sent a char '9'.\t");
+			
+			//IF we're in the middle of a SlewAsync, this applies
 			if (motorsBusy())
 			{
 				Azimuth.abort();
 				Altitude.abort();
+				Serial.write("Slewing Async Aborted;");
 			}
 			break;
+
+		//We can make as many cases as there are ASCII 8-bit characters
 
 		default:
 			Serial.write("You sent a non-cmd : ");
@@ -285,14 +303,13 @@ void loop()
 			break;
 		}
 
+
 		//clear out the instruction code
 		for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
 
 		currentPlus();
 		stringCount--;
 
-		//Serial.write(";\n");
-		Serial.write("\n");
 	}
 	delay(500);
 }
@@ -302,25 +319,33 @@ bool motorsBusy()
 	int azmPWM = Azimuth.getPWM();
 	int altPWM = Altitude.getPWM();
 
+	Serial.print(azmPWM);
+	Serial.print(" - ");
+	Serial.print(altPWM);
+	Serial.print("#");
+
 	if ((azmPWM != 0) && (altPWM != 0))
 	{
-		Azimuth.processME();
-		Altitude.processME();
+		//Azimuth.processME();
+		//Altitude.processME();
+		return true;
 	}
 	else if ((azmPWM != 0) && (altPWM == 0))
 	{
-		Azimuth.processME();
+		//Azimuth.processME();
+		return true;
 	}
 	else if ((azmPWM == 0) && (altPWM != 0))
 	{
-		Altitude.processME();
+		//Altitude.processME();
+		return true;
 	}
 	else //if ((azmPWM==0) && (altPWM==0))
 	{
 		return false;
 	}
 
-	return true;
+
 }
 
 void timeCheck()
@@ -384,6 +409,24 @@ void serialEvent()
 		{
 			byteArray[nextIn][i++] = inByte;
 		}
+	}
+
+	//if the command is abort, abort()
+	//happens the instant command '!' is received
+	//not with command '9', command '!' is EMERGENCYSTOP
+	if (byteArray[nextIn][0] == '!')
+	{
+		Azimuth.abort();
+		Altitude.abort();
+
+		//clear current abort command
+		for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
+
+		currentPlus();
+		stringCount--;
+
+		//clear all motor commands?
+		//currently it only clears current motor command
 	}
 }
 
