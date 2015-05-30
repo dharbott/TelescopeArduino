@@ -10,6 +10,7 @@ Axis::Axis()
 	countOffset = 0;
 	clockwise = true;
 	currentPWM = 0;
+	slewing = false;
 }
 
 
@@ -21,6 +22,7 @@ Axis::Axis(Motor myMotor, MagneticEncoder myEncoder)
 	countOffset = 0;
 	clockwise = true;
 	currentPWM = 0;
+	slewing = false;
 }
 
 
@@ -44,11 +46,8 @@ MagneticEncoder Axis::getEncoder()
 
 
 
-//Is there a better design?
-//determine if it's shorter to go
-//clockwise or counterclockwise
-//then sets the motor direction
-//-executed only once per move command
+// Determines Clockwise or Counter-
+// Sets Target MCODER VALUE
 void Axis::motorSetup(int input)
 {
 	int maxcount = encoder.getMaxCount();
@@ -114,11 +113,13 @@ void Axis::setUserSyncCount(int input)
 }
 
 
-//looking for better ways to do this
+// CHANGING
 bool Axis::processME()
 {
 
 	int distance = 0;
+
+	// There's a Delay between 
 	int current = encoder.getMECount();
 	
 	if (clockwise)
@@ -140,6 +141,7 @@ bool Axis::processME()
 	}
 	else
 	{
+		slewing = false;
 		updatePWM(0);
 		return false;
 	}
@@ -150,6 +152,12 @@ bool Axis::processME()
 int Axis::getPWM()
 {
 	return currentPWM;
+}
+
+
+bool Axis::getSlewing()
+{
+	return slewing;
 }
 
 

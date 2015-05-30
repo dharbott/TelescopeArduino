@@ -18,6 +18,7 @@ private:
 	int countOffset;
 	bool clockwise;
 	int currentPWM;
+	bool slewing;
 	
 	void updatePWM(int intPWM);
 
@@ -32,6 +33,7 @@ public:
 	void motorSetup(int inputMECount);
 	bool processME();
 	int getPWM();
+	bool getSlewing();
 
 	int getUserSyncCount();
 	void setUserSyncCount(int input);

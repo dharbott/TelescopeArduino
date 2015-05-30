@@ -55,6 +55,7 @@ int stringCount = 0;
 int i = 0;
 int current = 0;
 int nextIn = 0;
+bool slewingAsync = false;
 
 Axis Azimuth = Axis(
 	Motor(MD2_PWM, MD2_INA, MD2_INB),
@@ -132,9 +133,10 @@ void loop()
 	float tempf;
 
 	//Do Async Motor Actions even if no commands in queue
-	//Azimuth.processME();
-	//Altitude.processME();
+	if (Azimuth.getSlewing() == true) Azimuth.processME();
+	//if (Altitude.getSlewing() == true) Altitude.processME();
 	
+
 	//if the command queue is not empty
 	if (current != nextIn)
 	{
@@ -149,7 +151,7 @@ void loop()
 		case '0':
 			//Serial.write("You sent a char '0'.\n");
 
-			if (motorsBusy())
+			if (Azimuth.getSlewing() || Altitude.getSlewing())
 			{
 				Serial.write("Motors Busy;");
 				//return; //motor(s) busy with a command
@@ -171,7 +173,7 @@ void loop()
 			//NEED TO REDO THIS motorBusy Business, doesn't make sense
 			//check logic, where and when to check if motor is busy
 
-			if (motorsBusy()) return; //motor(s) busy with a slew async! RETURN
+			if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a slew async! RETURN
 
 			//if motor is idle, execute command
 			param1 = getParam1(byteArray[current]);
@@ -244,7 +246,7 @@ void loop()
 			//Serial.write("You sent a char '7'.\t");
 
 			//DRIVER.SyncToAltAz(Azimuth,Altitude), parameters in "arcminutes"
-			if (motorsBusy()) return; //motor(s) busy with a command
+			if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
 
 			param1 = Azimuth.getEncoder().minutesToCount(getParam1(byteArray[current]));
 			param2 = Azimuth.getEncoder().minutesToCount(getParam2(byteArray[current]));
@@ -266,8 +268,9 @@ void loop()
 
 
 			//The question is, should it consume the command? yes
-			if (motorsBusy()) return; //motor(s) busy with a command
+			if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
 
+			slewingAsync = true;
 			//if motor is idle, execute command
 			param1 = getParam1(byteArray[current]);
 			param2 = getParam2(byteArray[current]);
@@ -286,7 +289,7 @@ void loop()
 			//Serial.write("You sent a char '9'.\t");
 			
 			//IF we're in the middle of a SlewAsync, this applies
-			if (motorsBusy())
+			if (Azimuth.getSlewing() || Altitude.getSlewing())
 			{
 				Azimuth.abort();
 				Altitude.abort();
@@ -299,7 +302,7 @@ void loop()
 		default:
 			Serial.write("You sent a non-cmd : ");
 			Serial.write(byteArray[current][0]);
-			Serial.write('\t');
+			Serial.write(";");
 			break;
 		}
 
@@ -314,6 +317,8 @@ void loop()
 	delay(500);
 }
 
+
+/**
 bool motorsBusy()
 {
 	int azmPWM = Azimuth.getPWM();
@@ -344,9 +349,9 @@ bool motorsBusy()
 	{
 		return false;
 	}
-
-
 }
+**/
+
 
 void timeCheck()
 {
