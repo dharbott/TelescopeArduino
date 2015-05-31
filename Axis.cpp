@@ -46,8 +46,8 @@ MagneticEncoder Axis::getEncoder()
 
 
 
-// Determines Clockwise or Counter-
 // Sets Target MCODER VALUE
+// includes offset value
 void Axis::motorSetup(int input)
 {
 	int maxcount = encoder.getMaxCount();
@@ -61,23 +61,89 @@ void Axis::motorSetup(int input)
 	//to machine coordinates
 	int temp0 = input - countOffset;
 
-	//negative overflow?
+	//negative overflow? OR positive overflow?
 	if (temp0 < 0) temp0 += maxcount;
-
-	//positive overflow?
 	if (temp0 >= maxcount) temp0 -= maxcount;
 
-	int temp1 = encoder.getMECount();
-	int temp2 = encoder.getCWDistance(temp1, temp0);
-	int temp3 = encoder.getCCWDistance(temp1, temp0);
-	
-	Serial.print(temp1);
-	Serial.print(" - ");
-	Serial.println(temp0);
-
 	target = temp0;
-	clockwise = (temp2 <= temp3);
-	motor.setClockwise(clockwise);
+	slewing = true;
+}
+
+
+// CHANGING
+void Axis::processME()
+{
+	int distance = 0;
+	int maxCount = encoder.getMaxCount();
+
+	distance = encoder.getCWDistance(encoder.getMECount(), target);
+
+	// if the clockwise distance is greater than half
+	// the degrees (i.e. Encoder Count) then we don't
+	// want to traverse clockwise, but counterclockwise
+	// so set clockwise to false, and make distance
+	// the complement
+	if (distance >= (maxCount / 2))
+	{
+		distance = 4095 - distance;
+		motor.setClockwise(false);
+	}
+	else
+	{
+		motor.setClockwise(true);
+	}
+
+	if (distance >= (maxCount / 36))
+	{
+		updatePWM(255);
+	}
+	else if (distance >= 1)
+	{
+		//value jumps from 255 to 100,
+		//then jumps to 80,
+		//then jumps to 60, 40, 20
+		updatePWM((distance / 20) * 20 + 20);
+	}
+	else
+	{
+		slewing = false;
+		updatePWM(0);
+	}
+}
+
+
+int Axis::getPWM()
+{
+	return currentPWM;
+}
+
+
+bool Axis::getSlewing()
+{
+	return slewing;
+}
+
+
+void Axis::updatePWM(int intPWM)
+{
+	if (intPWM != currentPWM)
+	{
+		currentPWM = intPWM;
+		motor.setPWM(currentPWM);
+	}
+}
+
+// Sets the pwm to 0, target to match current
+void Axis::abort()
+{
+	slewing = false;
+	updatePWM(0);
+
+	// Delay may be necessary as motor
+	// stops and settles on a position
+	delay(50);
+	target = encoder.getMECount();
+	return;
 }
 
 
@@ -109,72 +175,5 @@ void Axis::setUserSyncCount(int input)
 	//if my current is 180d, set to 270d
 	//offset equals  (new - current) = 90d
 	countOffset = input - encoder.getMECount();
-	
-}
 
-
-// CHANGING
-bool Axis::processME()
-{
-
-	int distance = 0;
-
-	// There's a Delay between 
-	int current = encoder.getMECount();
-	
-	if (clockwise)
-		distance = encoder.getCWDistance(current, target);
-	else
-		distance = encoder.getCCWDistance(current, target);
-
-	if (distance >= 100)
-	{
-		updatePWM(255);
-	}
-	//small exception where this can fail
-	else if (distance >= 1)
-	{
-		//value jumps to 100,
-		//then jumps to 80,
-		//then jumps to 60, 40, 20
-		updatePWM((distance / 20) * 20 + 20);
-	}
-	else
-	{
-		slewing = false;
-		updatePWM(0);
-		return false;
-	}
-	return true;
-}
-
-
-int Axis::getPWM()
-{
-	return currentPWM;
-}
-
-
-bool Axis::getSlewing()
-{
-	return slewing;
-}
-
-
-void Axis::updatePWM(int intPWM)
-{
-	if (intPWM != currentPWM)
-	{
-		currentPWM = intPWM;
-		motor.setPWM(currentPWM);
-	}
-}
-
-// Sets the 
-void Axis::abort()
-{
-	updatePWM(0);
-	delay(100);
-	motorSetup(encoder.getMECount());
-	return;
 }

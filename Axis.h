@@ -31,7 +31,7 @@ public:
 	MagneticEncoder getEncoder();
 
 	void motorSetup(int inputMECount);
-	bool processME();
+	void processME();
 	int getPWM();
 	bool getSlewing();
 

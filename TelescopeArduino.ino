@@ -55,7 +55,7 @@ int stringCount = 0;
 int i = 0;
 int current = 0;
 int nextIn = 0;
-bool slewingAsync = false;
+//bool slewingAsync = false;
 
 Axis Azimuth = Axis(
 	Motor(MD2_PWM, MD2_INA, MD2_INB),
@@ -133,7 +133,7 @@ void loop()
 	float tempf;
 
 	//Do Async Motor Actions even if no commands in queue
-	if (Azimuth.getSlewing() == true) Azimuth.processME();
+	if (Azimuth.getSlewing()) Azimuth.processME();
 	//if (Altitude.getSlewing() == true) Altitude.processME();
 	
 
@@ -173,7 +173,9 @@ void loop()
 			//NEED TO REDO THIS motorBusy Business, doesn't make sense
 			//check logic, where and when to check if motor is busy
 
-			if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a slew async! RETURN
+			//if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a slew async! RETURN
+
+			if (Azimuth.getSlewing()) return;
 
 			//if motor is idle, execute command
 			param1 = getParam1(byteArray[current]);
@@ -185,10 +187,10 @@ void loop()
 			//Altitude.motorGO(Altitude.getEncoder().mintesToCount(param2));
 			
 			//LOOP WHILE still processing
-			while (Azimuth.processME());
+			while (Azimuth.getSlewing()) Azimuth.processME();
 			
 			//Altitude magnetic encoder not implement yet
-			//while (Azimuth.processME() || Altitude.processME());
+			//while (Altitude.getSlewing()) Altitude.processME();
 
 			Serial.write("Slewing (Sync) Finished;");
 
@@ -249,13 +251,12 @@ void loop()
 			if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
 
 			param1 = Azimuth.getEncoder().minutesToCount(getParam1(byteArray[current]));
-			param2 = Azimuth.getEncoder().minutesToCount(getParam2(byteArray[current]));
+			param2 = Altitude.getEncoder().minutesToCount(getParam2(byteArray[current]));
 						
 			Azimuth.setUserSyncCount(param1);
 			Altitude.setUserSyncCount(param2);
 
 			Serial.write("Sync User Coords (Azm, Alt), Started;");
-
 			break;
 
 		//SLEW ASYNCHRONOUS, RETURN IMMEDIATELY
@@ -270,7 +271,7 @@ void loop()
 			//The question is, should it consume the command? yes
 			if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
 
-			slewingAsync = true;
+			//slewingAsync = true;
 			//if motor is idle, execute command
 			param1 = getParam1(byteArray[current]);
 			param2 = getParam2(byteArray[current]);
@@ -288,13 +289,10 @@ void loop()
 		case '9':
 			//Serial.write("You sent a char '9'.\t");
 			
-			//IF we're in the middle of a SlewAsync, this applies
-			if (Azimuth.getSlewing() || Altitude.getSlewing())
-			{
-				Azimuth.abort();
-				Altitude.abort();
-				Serial.write("Slewing Async Aborted;");
-			}
+			Azimuth.abort();
+			Altitude.abort();
+
+			Serial.write("Slewing Async Aborted;");
 			break;
 
 		//We can make as many cases as there are ASCII 8-bit characters
