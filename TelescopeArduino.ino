@@ -106,18 +106,12 @@ void setup()
 	pinMode(LSOUT, INPUT);
 	pinMode(LSOVR, OUTPUT);
 
-
 	// put your setup code here, to run once:
 	Serial.begin(19200);
 	pinMode(13, OUTPUT);
 	digitalWrite(13, LOW);
 
 	//delay(1000);
-
-	//Serial.println("start");
-
-	//Azimuth.abort();
-	//Altitude.abort();
 }
 
 
@@ -133,7 +127,13 @@ void loop()
 	float tempf;
 
 	//Do Async Motor Actions even if no commands in queue
-	if (Azimuth.getSlewing()) Azimuth.processME();
+	if (Azimuth.getSlewing())
+	{
+		Azimuth.processME();
+
+		//SKETCHY!!!
+		if (!Azimuth.getSlewing()) Serial.write ("Slewing Finished;");
+	}
 	//if (Altitude.getSlewing() == true) Altitude.processME();
 	
 
@@ -186,13 +186,17 @@ void loop()
 			//Altitude magnetic encoder not implement yet
 			//Altitude.motorGO(Altitude.getEncoder().mintesToCount(param2));
 			
+			//SKETCHY!!!
+			//Removed the while loop processME, relying solely on the
+			//processME on the outside to catch everything...
+
 			//LOOP WHILE still processing
-			while (Azimuth.getSlewing()) Azimuth.processME();
+			//while (Azimuth.getSlewing()) Azimuth.processME();
 			
 			//Altitude magnetic encoder not implement yet
 			//while (Altitude.getSlewing()) Altitude.processME();
 
-			Serial.write("Slewing (Sync) Finished;");
+			//Serial.write("Slewing (Sync) Finished;");
 
 			break;
 
@@ -252,7 +256,7 @@ void loop()
 
 			param1 = Azimuth.getEncoder().minutesToCount(getParam1(byteArray[current]));
 			param2 = Altitude.getEncoder().minutesToCount(getParam2(byteArray[current]));
-						
+
 			Azimuth.setUserSyncCount(param1);
 			Altitude.setUserSyncCount(param2);
 
@@ -267,12 +271,8 @@ void loop()
 			//This function determines whether going clockwise or counter
 			//is the shortest path, and takes it
 
-
-			//The question is, should it consume the command? yes
 			if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
 
-			//slewingAsync = true;
-			//if motor is idle, execute command
 			param1 = getParam1(byteArray[current]);
 			param2 = getParam2(byteArray[current]);
 
@@ -316,41 +316,6 @@ void loop()
 }
 
 
-/**
-bool motorsBusy()
-{
-	int azmPWM = Azimuth.getPWM();
-	int altPWM = Altitude.getPWM();
-
-	Serial.print(azmPWM);
-	Serial.print(" - ");
-	Serial.print(altPWM);
-	Serial.print("#");
-
-	if ((azmPWM != 0) && (altPWM != 0))
-	{
-		//Azimuth.processME();
-		//Altitude.processME();
-		return true;
-	}
-	else if ((azmPWM != 0) && (altPWM == 0))
-	{
-		//Azimuth.processME();
-		return true;
-	}
-	else if ((azmPWM == 0) && (altPWM != 0))
-	{
-		//Altitude.processME();
-		return true;
-	}
-	else //if ((azmPWM==0) && (altPWM==0))
-	{
-		return false;
-	}
-}
-**/
-
-
 void timeCheck()
 {
 	unsigned long timestart = micros();
@@ -359,14 +324,6 @@ void timeCheck()
 	Serial.print(timeend);
 	Serial.print(" microseconds.\n");
 }
-
-
-//void serialReady()
-//{
-//  Serial.write(Serial.available());
-//    Serial.write(stringCount);
-//    Serial.write(';');
-//}
 
 
 //round robin index, array position of current instruction
@@ -414,6 +371,7 @@ void serialEvent()
 		}
 	}
 
+	//EMERGENCY STOP -> '!'
 	//if the command is abort, abort()
 	//happens the instant command '!' is received
 	//not with command '9', command '!' is EMERGENCYSTOP
@@ -422,6 +380,8 @@ void serialEvent()
 		Azimuth.abort();
 		Altitude.abort();
 
+		//Serial.write("Slewing (Sync) Aborted;");
+
 		//clear current abort command
 		for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
 
@@ -429,31 +389,21 @@ void serialEvent()
 		stringCount--;
 
 		//clear all motor commands?
-		//currently it only clears current motor command
+		//currently it only aborts current SlewAsync command
 	}
 }
 
-
-//ENDIAN-NESS IS IMPORTANT
-//These functions work, serial input "22323;"
-//output is "12851;"
-//which is 00110010 00110011
-//corresponding to "50" "51" 
-////SOMEHOW I GOT IT WRONG, LET"S REVERSE IT
 
 //Version 1: Parameter 1 is typically a 16-bit integer
 //representing computed 'arcminutes' that represent a position
 //on the altitude local coordinate system
 unsigned int getParam1(byte bytesIn[])
 {
-	unsigned int retval = bytesIn[1];
-	retval += bytesIn[2] << 8;
-	return (retval);
+//	unsigned int retval = bytesIn[1] + (bytesIn[2] << 8);
+//	return retval;
+	return (bytesIn[1] + (bytesIn[2] << 8));
 }
 
-
-//ENDIAN-NESS IS IMPORTANT
-////SOMEHOW I GOT IT WRONG, LET"S REVERSE IT
 
 //Version 1: Parameter 2 is typically a 16-bit integer
 //representing computed 'arcminutes' that represent a position
@@ -464,15 +414,3 @@ unsigned int getParam2(byte bytesIn[])
 	retval += bytesIn[4] << 8;
 	return (retval);
 }
-
-
-/**
-bytepair intToBytes (int input)
-{
-	bytepair retval;
-	retval.MSByte = input >> 8;
-	retval.LSByte = input && 255;
-	return retval;
-
-}
-**/

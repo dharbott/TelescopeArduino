@@ -1,0 +1,31 @@
+﻿Build started 8/31/2015 12:04:08 PM.
+     1>Project "C:\Users\bububear\Documents\GitHub\TelescopeArduino\TelescopeArduino.vcxproj" on node 2 (ClCompile target(s)).
+     1>ClCompile:
+         D:\MVSC2013\VC\bin\CL.exe /c /I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino" /I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\variants\standard" /IC:\Users\bububear\Documents\GitHub\TelescopeArduino /I"C:\Program Files (x86)\Arduino\libraries" /I"C:\Program Files (x86)\Arduino\hardware\arduino\avr\libraries" /I"C:\Program Files (x86)\Visual Micro\Visual Micro for Arduino\Micro Platforms\default\debuggers" /IC:\Users\bububear\Documents\Arduino\libraries /I"c:\program files (x86)\arduino\hardware\tools\avr\avr\include\\" /I"c:\program files (x86)\arduino\hardware\tools\avr\avr\include\avr\\" /I"c:\program files (x86)\arduino\hardware\tools\avr\avr\\" /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D __AVR_ATmega328p__ /D __AVR_ATmega328P__ /D ARDUINO=105 /D ARDUINO_MAIN /D __AVR__ /D __avr__ /D F_CPU=16000000L /D __cplusplus /D GCC_VERSION=40302 /D ARDUINO_ARCH_AVR /D ARDUINO_AVR_UNO /D _MBCS /X /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /FI"C:\Users\bububear\Documents\GitHub\TelescopeArduino\Visual Micro\.TelescopeArduino.vsarduino.h" /analyze- /errorReport:prompt Axis.cpp
+         Axis.cpp
+     1>c1xx : warning C4117: macro name '__cplusplus' is reserved, '#define' ignored
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(13): warning C4005: '__AVR_ATmega328p__' : macro redefinition
+                 command-line arguments :  see previous definition of '__AVR_ATmega328p__'
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(14): warning C4005: '__AVR_ATmega328P__' : macro redefinition
+                 command-line arguments :  see previous definition of '__AVR_ATmega328P__'
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(15): warning C4005: 'ARDUINO' : macro redefinition
+                 command-line arguments :  see previous definition of 'ARDUINO'
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(16): warning C4005: 'ARDUINO_MAIN' : macro redefinition
+                 command-line arguments :  see previous definition of 'ARDUINO_MAIN'
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(17): warning C4005: '__AVR__' : macro redefinition
+                 command-line arguments :  see previous definition of '__AVR__'
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(18): warning C4005: '__avr__' : macro redefinition
+                 command-line arguments :  see previous definition of '__avr__'
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(20): warning C4117: macro name '__cplusplus' is reserved, '#define' ignored
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(21): warning C4005: 'ARDUINO_ARCH_AVR' : macro redefinition
+                 command-line arguments :  see previous definition of 'ARDUINO_ARCH_AVR'
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(22): warning C4005: 'ARDUINO_AVR_UNO' : macro redefinition
+                 command-line arguments :  see previous definition of 'ARDUINO_AVR_UNO'
+     1>c:\users\bububear\documents\github\telescopearduino\visual micro\.telescopearduino.vsarduino.h(31): warning C4005: 'GCC_VERSION' : macro redefinition
+                 command-line arguments :  see previous definition of 'GCC_VERSION'
+     1>c:\program files (x86)\arduino\hardware\tools\avr\avr\include\stdlib.h(47): fatal error C1083: Cannot open include file: 'stddef.h': No such file or directory
+     1>Done Building Project "C:\Users\bububear\Documents\GitHub\TelescopeArduino\TelescopeArduino.vcxproj" (ClCompile target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:02.84
