@@ -171,7 +171,7 @@ void loop() {
 
 			Serial.write("You sent a char '4'.\n");
 			Serial.write("Moving Azimuth clockwise by 100 points.\t");
-			Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 100) % 4096);
+			Azimuth.motorGOCW((Azimuth.getEncoder().getMECount() + 100) % 4096);
 			break;
 
 		case 53:
@@ -180,7 +180,7 @@ void loop() {
 			//This function only makes it rotate counterclockwise 100 pts
 			Serial.write("You sent a char '5'.\n");
 			Serial.write("Moving Azimuth counterclockwise by 100 points.\t");
-			Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 3996) % 4096);
+			//Azimuth.motorGO((Azimuth.getEncoder().getMECount() + 3996) % 4096);
 			break;
 
 		case 54:
