@@ -5,8 +5,8 @@
 #define bufflen 8
 #define codelen 16
 
-#define SELECT_PIN 12
 #define CLOCK_PIN 13
+#define SELECT_PIN 12
 #define ME1_DATA_PIN 11
 #define ME2_DATA_PIN 10
 
@@ -58,288 +58,318 @@ int nextIn = 0;
 //bool slewingAsync = false;
 
 Axis Azimuth = Axis(
-	Motor(MD2_PWM, MD2_INA, MD2_INB),
-	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN)
-	);
+                 Motor(MD2_PWM, MD2_INA, MD2_INB),
+                 MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN)
+               );
 
 Axis Altitude = Axis(
-	Motor(MD1_PWM, MD1_INA, MD1_INB),
-	MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
-	);
+                  Motor(MD1_PWM, MD1_INA, MD1_INB),
+                  MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
+                );
 
 
 //TODO : DOUBLE CHECK PIN NUMBERS
 void setup()
 {
 
-	pinMode(SELECT_PIN, OUTPUT);
-	pinMode(CLOCK_PIN, OUTPUT);
-	pinMode(ME1_DATA_PIN, INPUT);
-	pinMode(ME2_DATA_PIN, INPUT);
+  pinMode(CLOCK_PIN, OUTPUT);
+  pinMode(SELECT_PIN, OUTPUT);
+  pinMode(ME1_DATA_PIN, INPUT);
+  pinMode(ME2_DATA_PIN, INPUT);
 
-	pinMode(MD1_PWM, OUTPUT);
-	pinMode(MD1_INA, OUTPUT);
-	pinMode(MD1_INB, OUTPUT);
+  pinMode(MD1_PWM, OUTPUT);
+  pinMode(MD1_INA, OUTPUT);
+  pinMode(MD1_INB, OUTPUT);
 
-	pinMode(MD2_PWM, OUTPUT);
-	pinMode(MD2_INA, OUTPUT);
-	pinMode(MD2_INB, OUTPUT);
+  pinMode(MD2_PWM, OUTPUT);
+  pinMode(MD2_INA, OUTPUT);
+  pinMode(MD2_INB, OUTPUT);
 
-	//give some default values
-	digitalWrite(CLOCK_PIN, HIGH);
-	digitalWrite(SELECT_PIN, HIGH);
+  //give some default values
+  digitalWrite(CLOCK_PIN, HIGH);
+  digitalWrite(SELECT_PIN, HIGH);
 
-	analogWrite(MD1_PWM, 0);
-	digitalWrite(MD1_INA, LOW);
-	digitalWrite(MD1_INB, LOW);
+  analogWrite(MD1_PWM, 0);
+  digitalWrite(MD1_INA, LOW);
+  digitalWrite(MD1_INB, LOW);
 
-	analogWrite(MD2_PWM, 0);
-	digitalWrite(MD2_INA, LOW);
-	digitalWrite(MD2_INB, LOW);
+  analogWrite(MD2_PWM, 0);
+  digitalWrite(MD2_INA, LOW);
+  digitalWrite(MD2_INB, LOW);
 
-	//setup pins for Quadrature, not used
-	//pinMode(QUAD_A_PIN, INPUT);
-	//pinMode(QUAD_B_PIN, INPUT);
+  //setup pins for Quadrature, not used
+  //pinMode(QUAD_A_PIN, INPUT);
+  //pinMode(QUAD_B_PIN, INPUT);
 
-	pinMode(HALL_PIN, INPUT);
+  pinMode(HALL_PIN, INPUT);
 
-	pinMode(LSOUT, INPUT);
-	pinMode(LSOVR, OUTPUT);
+  pinMode(LSOUT, INPUT);
+  pinMode(LSOVR, OUTPUT);
 
-	// put your setup code here, to run once:
-	Serial.begin(19200);
-	pinMode(13, OUTPUT);
-	digitalWrite(13, LOW);
+  // put your setup code here, to run once:
+  Serial.begin(19200);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW);
 
-	//delay(1000);
+  //delay(1000);
 }
 
 
 void loop()
 {
 
-	//360 degrees/rev * 60 minutes/degree = 21600 minutes/rev
-	//21600 fits in 16-bits, a 2-byte integer on Arduino
+  //360 degrees/rev * 60 minutes/degree = 21600 minutes/rev
+  //21600 fits in 16-bits, a 2-byte integer on Arduino
 
-	int param1 = 0;
-	int param2 = 0;
-	int param3 = 0;
-	float tempf;
+  int param1 = 0;
+  int param2 = 0;
+  int param3 = 0;
+  float tempf;
 
-	//Do Async Motor Actions even if no commands in queue
-	if (Azimuth.getSlewing())
-	{
-		Azimuth.processME();
+  //Do Async Motor Actions even if no commands in queue
+  if (Azimuth.getSlewing() || (Altitude.getSlewing()))
+  {
+    //Azimuth.processME();
+    //Altitude.processME();
 
-		//SKETCHY!!!
-		if (!Azimuth.getSlewing()) Serial.write ("Slewing Finished;");
-	}
-	//if (Altitude.getSlewing() == true) Altitude.processME();
-	
+    //SKETCHY!!!
+    //if (!Azimuth.getSlewing()) Serial.write ("Slewing Finished;");
 
-	//if the command queue is not empty
-	if (current != nextIn)
-	{
-		//Serial.write("#Instructions left : [");
-		//Serial.print(stringCount);
-		//Serial.write("] - Processing...;\t");
+    //if ((!Azimuth.getSlewing()) && (!Altitude.getSlewing()))
+    //  Serial.write ("Slewing Finished;");
+  }
 
-		switch (byteArray[current][0])
-		{
+  //if (Altitude.getSlewing() == true) Altitude.processME();
 
-		//CHECK IF SLEWING ASYNCHRONOUS, MOTORS BUSY
-		case '0':
-			//Serial.write("You sent a char '0'.\n");
+//Serial.flush();
 
-			if (Azimuth.getSlewing() || Altitude.getSlewing())
-			{
-				Serial.write("Motors Busy;");
-				//return; //motor(s) busy with a command
-			}
-			else
-			{
-				Serial.write("Ready;");
-			}
-			
-			break;
+  //if the command queue is not empty
+  if (current != nextIn)
+  {
+    //Serial.write("#Instructions left : [");
+    //Serial.print(stringCount);
+    //Serial.write("] - Processing...;\t");
+//Serial.write(byteArray[current][0]);
+//Serial.write(", ");
 
-		//SLEW SYNCHRONOUS, RETURN WHEN DONE
-		case '1':
-			//CASE 49, my GOTO Function 1
-			//parameters are integers - arcminutes
-			//motorSetup determines shortest path
-			//determines clockwise or counter-
+    //driver sent a 2-byte char, but we only need to check
+    //  the first byte, since Arduino uses 1-byte ASCII
+    switch (byteArray[current][0])
+    {
 
-			//NEED TO REDO THIS motorBusy Business, doesn't make sense
-			//check logic, where and when to check if motor is busy
+      //CHECK IF SLEWING ASYNCHRONOUS, MOTORS BUSY
+      case '0':
+        //Serial.write("You sent a char '0'.\n");
 
-			//if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a slew async! RETURN
+        if (Azimuth.getSlewing() || Altitude.getSlewing())
+        {
+          //Serial.write("Motors Busy;");
+          //return; //motor(s) busy with a command
+        }
+        else
+        {
+          //Serial.write("Ready;");
+        }
 
-			if (Azimuth.getSlewing()) return;
+        break;
 
-			//if motor is idle, execute command
-			param1 = getParam1(byteArray[current]);
-			param2 = getParam2(byteArray[current]);
+      //SLEW SYNCHRONOUS, RETURN WHEN DONE
+      case '1':
 
-			Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
+        //CASE 49, my GOTO Function 1
+        //parameters are integers - arcminutes
+        //motorSetup determines shortest path
+        //determines clockwise or counter-
 
-			//Altitude magnetic encoder not implement yet
-			//Altitude.motorGO(Altitude.getEncoder().mintesToCount(param2));
-			
-			//SKETCHY!!!
-			//Removed the while loop processME, relying solely on the
-			//processME on the outside to catch everything...
+        //NEED TO REDO THIS motorBusy Business, doesn't make sense
+        //check logic, where and when to check if motor is busy
 
-			//LOOP WHILE still processing
-			//while (Azimuth.getSlewing()) Azimuth.processME();
-			
-			//Altitude magnetic encoder not implement yet
-			//while (Altitude.getSlewing()) Altitude.processME();
+        //if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a slew async! RETURN
 
-			//Serial.write("Slewing (Sync) Finished;");
-
-			break;
-
-		//DRIVER.Azimuth get
-		case '2':
-			//Serial.write("You sent a char '2'.\t");
-
-			param2 = Azimuth.getEncoder().getMECount();
-			//Serial.print();
-			
-			//INSERT FUNCITON: INT TO BYTE PAIR - HERE
-			//ASSUME THAT COUNTTOMINUTES NEVER EXCEEDS 32K..
-			//ELSE CONVERTING TO BYTES AND SENDING IT WILL
-			//YIELD A PROBLEM WITH THE NEGATIVE BIT
-			tempf = Azimuth.getEncoder().countToAngleFloat(param2);
-
-			Serial.print(tempf);
-			//Serial.print(param2 >> 8);
-			//Serial.print(param2 & 255);
-			Serial.write(";");
-			break;
-
-		//DRIVER.Altitude get
-		case '3':
-			//Serial.write("You sent a char '3'.\t");
-			param2 = Altitude.getEncoder().getMECount();
-			//param3 = 2000;
-			//Serial.print(Altitude.getEncoder().countToMinutes(param3));
-			tempf = Altitude.getEncoder().countToAngleFloat(param2);
-
-			Serial.print(tempf);
-			//INSERT FUNCITON: INT TO BYTE PAIR - HERE
-			//Serial.write(param3 >> 8);
-			//Serial.write(param3 & 255);
-			//Serial.print(param3);
-			Serial.write(";");
-			break;
-
-		case '4':
-			//Serial.write("You sent a char '4'.\n");
-			break;
-
-		case '5':
-			//Serial.write("You sent a char '5'.\n");
-			break;
-
-		case '6':
-			//Serial.write("You sent a char '6'.\t");
-			break;
-
-		//SYNC USER COORD: AZIMUTH, SYNC USER COORD: ALTITUDE
-		case '7':
-			//Serial.write("You sent a char '7'.\t");
-
-			//DRIVER.SyncToAltAz(Azimuth,Altitude), parameters in "arcminutes"
-			if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
-
-			param1 = Azimuth.getEncoder().minutesToCount(getParam1(byteArray[current]));
-			param2 = Altitude.getEncoder().minutesToCount(getParam2(byteArray[current]));
-
-			Azimuth.setUserSyncCount(param1);
-			Altitude.setUserSyncCount(param2);
-
-			Serial.write("Sync User Coords (Azm, Alt), Started;");
-			break;
-
-		//SLEW ASYNCHRONOUS, RETURN IMMEDIATELY
-		case '8':
-			//Serial.write("You sent a char '8'.\t");
-
-			//FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-			//This function determines whether going clockwise or counter
-			//is the shortest path, and takes it
-
-			if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
-
-			param1 = getParam1(byteArray[current]);
-			param2 = getParam2(byteArray[current]);
-
-			Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
-			//Altitude.motorSetup(Altitude.getEncoder().mintesToCount(param2));
-
-			Serial.write("Slewing Async Started;");
-			break;
-
-			//SO, is there anything there to notify the Driver that
-			//SlewAsync finished? Not yet....
-			
-		//DRIVER.ABORTSLEW()
-		case '9':
-			//Serial.write("You sent a char '9'.\t");
-			
-			Azimuth.abort();
-			Altitude.abort();
-
-			Serial.write("Slewing Async Aborted;");
-			break;
-
-		//We can make as many cases as there are ASCII 8-bit characters
-
-		default:
-			Serial.write("You sent a non-cmd : ");
-			Serial.write(byteArray[current][0]);
-			Serial.write(";");
-			break;
-		}
+        //if (Azimuth.getSlewing()) return;
+        //if (Altitude.getSlewing()) return;
 
 
-		//clear out the instruction code
-		for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
+        //if motor is idle, execute command
+        param1 = getParam1(byteArray[current]);
+        param2 = getParam2(byteArray[current]);
 
-		currentPlus();
-		stringCount--;
+/*
+        for (int i = 0; i < 8; i++)
+        {
+          Serial.print("\byte "); 
+          Serial.print(i);
+          Serial.print(": [");
+          Serial.print(byteArray[current][i]);
+          Serial.print(", ");
+          Serial.print(byteArray[current][i], BIN);
+          Serial.print("] -- \n");
+        }
+     */
+        Serial.write("(Param1, Param2) : (");
+        Serial.print(param1);
+        Serial.write(", ");
+        Serial.print(param2);
+        Serial.write(");");
+   
 
-	}
-	delay(500);
+        //Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
+        //Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
+
+        //SKETCHY!!!
+        //Removed the while loop processME, relying solely on the
+        //processME on the outside to catch everything...
+
+        //LOOP WHILE still processing
+        //while (Azimuth.getSlewing()) Azimuth.processME();
+
+        //Altitude magnetic encoder not implement yet
+        //while (Altitude.getSlewing()) Altitude.processME();
+
+        //Serial.write("Slewing (Sync) Finished;");
+
+        break;
+
+      //DRIVER.Azimuth get
+      case '2':
+        //Serial.write("You sent a char '2'.\t");
+
+        param2 = Azimuth.getEncoder().getMECount();
+        //Serial.print();
+
+        //INSERT FUNCITON: INT TO BYTE PAIR - HERE
+        //ASSUME THAT COUNTTOMINUTES NEVER EXCEEDS 32K..
+        //ELSE CONVERTING TO BYTES AND SENDING IT WILL
+        //YIELD A PROBLEM WITH THE NEGATIVE BIT
+        tempf = Azimuth.getEncoder().countToAngleFloat(param2);
+
+        //Serial.print(tempf);
+        //Serial.print(param2 >> 8);
+        //Serial.print(param2 & 255);
+        //Serial.write(";");
+        break;
+
+      //DRIVER.Altitude get
+      case '3':
+        //Serial.write("You sent a char '3'.\t");
+        param2 = Altitude.getEncoder().getMECount();
+        //param3 = 2000;
+        //Serial.print(Altitude.getEncoder().countToMinutes(param3));
+        tempf = Altitude.getEncoder().countToAngleFloat(param2);
+
+        //Serial.print(tempf);
+        //INSERT FUNCITON: INT TO BYTE PAIR - HERE
+        //Serial.write(param3 >> 8);
+        //Serial.write(param3 & 255);
+        //Serial.print(param3);
+        //Serial.write(";");
+        break;
+
+      case '4':
+        //Serial.write("You sent a char '4'.\n");
+        break;
+
+      case '5':
+        //Serial.write("You sent a char '5'.\n");
+        break;
+
+      case '6':
+        //Serial.write("You sent a char '6'.\t");
+        break;
+
+      //SYNC USER COORD: AZIMUTH, SYNC USER COORD: ALTITUDE
+      case '7':
+        //Serial.write("You sent a char '7'.\t");
+
+        //DRIVER.SyncToAltAz(Azimuth,Altitude), parameters in "arcminutes"
+        if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
+
+        param1 = Azimuth.getEncoder().minutesToCount(getParam1(byteArray[current]));
+        param2 = Altitude.getEncoder().minutesToCount(getParam2(byteArray[current]));
+
+        Azimuth.setUserSyncCount(param1);
+        Altitude.setUserSyncCount(param2);
+
+        //Serial.write("Sync User Coords (Azm, Alt), Started;");
+        break;
+
+      //SLEW ASYNCHRONOUS, RETURN IMMEDIATELY
+      case '8':
+        //Serial.write("You sent a char '8'.\t");
+
+        //FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
+        //This function determines whether going clockwise or counter
+        //is the shortest path, and takes it
+
+        if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
+
+        param1 = getParam1(byteArray[current]);
+        param2 = getParam2(byteArray[current]);
+
+        Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
+        //Altitude.motorSetup(Altitude.getEncoder().mintesToCount(param2));
+
+        //Serial.write("Slewing Async Started;");
+        break;
+
+      //SO, is there anything there to notify the Driver that
+      //SlewAsync finished? Not yet....
+
+      //DRIVER.ABORTSLEW()
+      case '9':
+        //Serial.write("You sent a char '9'.\t");
+
+        Azimuth.abort();
+        Altitude.abort();
+
+        //Serial.write("Slewing Async Aborted;");
+        break;
+
+      //We can make as many cases as there are ASCII 8-bit characters
+
+      default:
+        //Serial.write("You sent a non-cmd : ");
+        //Serial.write(byteArray[current][0]);
+        //Serial.write(";");
+        break;
+    }
+
+
+    //clear out the instruction code
+    for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
+
+    currentPlus();
+    stringCount--;
+
+  }
+  delay(500);
 }
 
 
 void timeCheck()
 {
-	unsigned long timestart = micros();
-	unsigned long timeend = micros() - timestart;
-	Serial.print("TIME : ");
-	Serial.print(timeend);
-	Serial.print(" microseconds.\n");
+  unsigned long timestart = micros();
+  unsigned long timeend = micros() - timestart;
+  Serial.print("TIME : ");
+  Serial.print(timeend);
+  Serial.print(" microseconds.\n");
 }
 
 
 //round robin index, array position of current instruction
 void currentPlus()
 {
-	current = current + 1;
-	if (current >= bufflen)
-		current = 0;
+  current = current + 1;
+  if (current >= bufflen)
+    current = 0;
 }
 
 //round robin index, a spot to insert next instruction
 void nextInPlus()
 {
-	nextIn = nextIn + 1;
-	if (nextIn >= bufflen)
-		nextIn = 0;
+  nextIn = nextIn + 1;
+  if (nextIn >= bufflen)
+    nextIn = 0;
 }
 
 
@@ -350,47 +380,51 @@ void nextInPlus()
 //is only 63 bytes, or 63 chars
 void serialEvent()
 {
-	byte inByte;
+  byte inByte;
 
-	//keep adding instructions as long as there are bytes in serial available
-	//and while there is at least one empty spot for an instruction in the buffer
-	//this stringCount+1, because nextIn points to an empty spot in the buffer
-	while (Serial.available() && ((stringCount + 1) < bufflen))
-	{
-		inByte = Serial.read();
+  //keep adding instructions as long as there are bytes in serial available
+  //and while there is at least one empty spot for an instruction in the buffer
+  //this stringCount+1, because nextIn points to an empty spot in the buffer
+  while (Serial.available() && ((stringCount + 1) < bufflen))
+  {
+    inByte = Serial.read();
 
-		if (inByte == ';')
-		{
-			nextInPlus();
-			stringCount++;
-			i = 0;
-		}
-		else
-		{
-			byteArray[nextIn][i++] = inByte;
-		}
-	}
+    if (inByte == ';')
+    {
+      //THIS FIX: because ';' is sent as 2 bytes,
+      //  but Serial.read() only reads in 1 byte at a time
+      //  so we have to get rid of the trailing byte
+      Serial.read();
+      nextInPlus();
+      stringCount++;
+      i = 0;
+    }
+    else
+    {
+      byteArray[nextIn][i++] = inByte;
+    }
+  }
 
-	//EMERGENCY STOP -> '!'
-	//if the command is abort, abort()
-	//happens the instant command '!' is received
-	//not with command '9', command '!' is EMERGENCYSTOP
-	if (byteArray[nextIn][0] == '!')
-	{
-		Azimuth.abort();
-		Altitude.abort();
+  //EMERGENCY STOP -> '!'
+  //if the command is abort, abort()
+  //happens the instant command '!' is received
+  //not with command '9', command '!' is EMERGENCYSTOP
+  if (byteArray[nextIn][1] == '!')
+  {
+    Azimuth.abort();
+    Altitude.abort();
 
-		//Serial.write("Slewing (Sync) Aborted;");
+    //Serial.write("Slewing (Sync) Aborted;");
 
-		//clear current abort command
-		for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
+    //clear current abort command
+    for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
 
-		currentPlus();
-		stringCount--;
+    currentPlus();
+    stringCount--;
 
-		//clear all motor commands?
-		//currently it only aborts current SlewAsync command
-	}
+    //clear all motor commands?
+    //currently it only aborts current SlewAsync command
+  }
 }
 
 
@@ -399,9 +433,9 @@ void serialEvent()
 //on the altitude local coordinate system
 unsigned int getParam1(byte bytesIn[])
 {
-//	unsigned int retval = bytesIn[1] + (bytesIn[2] << 8);
-//	return retval;
-	return (bytesIn[1] + (bytesIn[2] << 8));
+  //	unsigned int retval = bytesIn[1] + (bytesIn[2] << 8);
+  //	return retval;
+  return (bytesIn[2] + (bytesIn[3] << 8));
 }
 
 
@@ -410,7 +444,8 @@ unsigned int getParam1(byte bytesIn[])
 //on the azimuth local coordinate system
 unsigned int getParam2(byte bytesIn[])
 {
-	unsigned int retval = bytesIn[3];
-	retval += bytesIn[4] << 8;
-	return (retval);
+  //unsigned int retval = bytesIn[3];
+  //retval += bytesIn[4] << 8;
+  //return (retval);
+  return (bytesIn[4] + (bytesIn[5] << 8));
 }

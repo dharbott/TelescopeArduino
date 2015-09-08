@@ -102,7 +102,7 @@ void Axis::processME()
 		//value jumps from 255 to 100,
 		//then jumps to 80,
 		//then jumps to 60, 40, 20
-		updatePWM((distance / 20) * 20 + 20);
+		updatePWM((distance / 30) * 30 + 30);
 	}
 	else
 	{
