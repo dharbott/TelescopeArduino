@@ -129,19 +129,15 @@ void loop()
   //Do Async Motor Actions even if no commands in queue
   if (Azimuth.getSlewing() || (Altitude.getSlewing()))
   {
-    //Azimuth.processME();
-    //Altitude.processME();
+    Azimuth.processME();
+    Altitude.processME();
 
     //SKETCHY!!!
     //if (!Azimuth.getSlewing()) Serial.write ("Slewing Finished;");
 
     //if ((!Azimuth.getSlewing()) && (!Altitude.getSlewing()))
-    //  Serial.write ("Slewing Finished;");
+    //Serial.write ("Slewing Finished;");
   }
-
-  //if (Altitude.getSlewing() == true) Altitude.processME();
-
-//Serial.flush();
 
   //if the command queue is not empty
   if (current != nextIn)
@@ -149,8 +145,6 @@ void loop()
     //Serial.write("#Instructions left : [");
     //Serial.print(stringCount);
     //Serial.write("] - Processing...;\t");
-//Serial.write(byteArray[current][0]);
-//Serial.write(", ");
 
     //driver sent a 2-byte char, but we only need to check
     //  the first byte, since Arduino uses 1-byte ASCII
@@ -173,7 +167,7 @@ void loop()
 
         break;
 
-      //SLEW SYNCHRONOUS, RETURN WHEN DONE
+      //SLEW TO ALT AZM SYNCHRONOUS, RETURN WHEN DONE
       case '1':
 
         //CASE 49, my GOTO Function 1
@@ -181,88 +175,76 @@ void loop()
         //motorSetup determines shortest path
         //determines clockwise or counter-
 
-        //NEED TO REDO THIS motorBusy Business, doesn't make sense
         //check logic, where and when to check if motor is busy
+
+        //Q: Do we accept SlewAltAz Sync commands while slewing asynch?
+        //A: I don't know yet
 
         //if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a slew async! RETURN
 
-        //if (Azimuth.getSlewing()) return;
-        //if (Altitude.getSlewing()) return;
-
-
-        //if motor is idle, execute command
         param1 = getParam1(byteArray[current]);
         param2 = getParam2(byteArray[current]);
 
-/*
-        for (int i = 0; i < 8; i++)
-        {
-          Serial.print("\byte "); 
-          Serial.print(i);
-          Serial.print(": [");
-          Serial.print(byteArray[current][i]);
-          Serial.print(", ");
-          Serial.print(byteArray[current][i], BIN);
-          Serial.print("] -- \n");
-        }
-     */
-        Serial.write("(Param1, Param2) : (");
-        Serial.print(param1);
-        Serial.write(", ");
-        Serial.print(param2);
-        Serial.write(");");
-   
-
-        //Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
-        //Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
+        Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
+        Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
 
         //SKETCHY!!!
         //Removed the while loop processME, relying solely on the
         //processME on the outside to catch everything...
 
         //LOOP WHILE still processing
-        //while (Azimuth.getSlewing()) Azimuth.processME();
+        while (Azimuth.getSlewing() || Altitude.getSlewing())
+        {
+          //when we do processME(), we calculate the distance
+          // from current angle to target angle, but once we reach
+          // a distance of 0 (or was it 1) then getSlewing()
+          // returns false, and processME() doesn't get called
+          // again, even the value somehow shifts or changes after
+          // it has stopped
 
-        //Altitude magnetic encoder not implement yet
-        //while (Altitude.getSlewing()) Altitude.processME();
+          if (Azimuth.getSlewing())
+            Azimuth.processME();
+          if (Altitude.getSlewing())
+            Altitude.processME();
+        }
 
-        //Serial.write("Slewing (Sync) Finished;");
+        Serial.write("Slewing Finished;");
 
         break;
 
-      //DRIVER.Azimuth get
+      //DRIVER.Azimuth get()
       case '2':
-        //Serial.write("You sent a char '2'.\t");
 
         param2 = Azimuth.getEncoder().getMECount();
-        //Serial.print();
 
         //INSERT FUNCITON: INT TO BYTE PAIR - HERE
         //ASSUME THAT COUNTTOMINUTES NEVER EXCEEDS 32K..
         //ELSE CONVERTING TO BYTES AND SENDING IT WILL
-        //YIELD A PROBLEM WITH THE NEGATIVE BIT
+        //YIELD A PROBLEM WITH THE NEGATIVE BIT??
         tempf = Azimuth.getEncoder().countToAngleFloat(param2);
 
-        //Serial.print(tempf);
+        Serial.print(tempf);
+        
         //Serial.print(param2 >> 8);
         //Serial.print(param2 & 255);
-        //Serial.write(";");
+        
+        Serial.write(";");
         break;
 
       //DRIVER.Altitude get
       case '3':
-        //Serial.write("You sent a char '3'.\t");
+      
         param2 = Altitude.getEncoder().getMECount();
-        //param3 = 2000;
-        //Serial.print(Altitude.getEncoder().countToMinutes(param3));
+        
         tempf = Altitude.getEncoder().countToAngleFloat(param2);
 
-        //Serial.print(tempf);
+        Serial.print(tempf);
+        
         //INSERT FUNCITON: INT TO BYTE PAIR - HERE
         //Serial.write(param3 >> 8);
         //Serial.write(param3 & 255);
-        //Serial.print(param3);
-        //Serial.write(";");
+        
+        Serial.write(";");
         break;
 
       case '4':
