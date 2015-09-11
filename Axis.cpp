@@ -59,7 +59,7 @@ void Axis::motorSetup(int input)
 	
 	//translate from user coordinates
 	//to machine coordinates
-	int temp0 = input - countOffset;
+	int temp0 = input;
 
 	//negative overflow? OR positive overflow?
 	if (temp0 < 0) temp0 += maxcount;
@@ -76,7 +76,7 @@ void Axis::processME()
 	int distance = 0;
 	int maxCount = encoder.getMaxCount();
 
-	distance = encoder.getCWDistance(encoder.getMECount(), target);
+	distance = encoder.getCWDistance(getUserSyncCount(), target);
 
 	// if the clockwise distance is greater than half
 	// the degrees (i.e. Encoder Count) then we don't
@@ -142,7 +142,7 @@ void Axis::abort()
 	// Delay may be necessary as motor
 	// stops and settles on a position
 	delay(50);
-	target = encoder.getMECount();
+	target = getUserSyncCount();
 	return;
 }
 
@@ -172,7 +172,10 @@ void Axis::setUserSyncCount(int input)
 		return; //unhandled error state
 	}
 
-	//if my current is 180d, set to 270d
+//sync = current + offset
+//offset = sync - current
+
+	//if my current is 180d, input is 270d
 	//offset equals  (new - current) = 90d
 	countOffset = input - encoder.getMECount();
 

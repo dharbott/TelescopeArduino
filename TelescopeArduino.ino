@@ -206,6 +206,10 @@ void loop()
             Azimuth.processME();
           if (Altitude.getSlewing())
             Altitude.processME();
+            
+            //if we hit the hard limit, we fail
+            //so we should check alt input to avoid hard limit
+            //create a soft limit
         }
 
         Serial.write("Slewing Finished;");
@@ -215,7 +219,9 @@ void loop()
       //DRIVER.Azimuth get()
       case '2':
 
-        param2 = Azimuth.getEncoder().getMECount();
+        //param2 = Azimuth.getEncoder().getMECount();
+
+        param2 = Azimuth.getUserSyncCount();
 
         //INSERT FUNCITON: INT TO BYTE PAIR - HERE
         //ASSUME THAT COUNTTOMINUTES NEVER EXCEEDS 32K..
@@ -234,7 +240,9 @@ void loop()
       //DRIVER.Altitude get
       case '3':
       
-        param2 = Altitude.getEncoder().getMECount();
+        //param2 = Altitude.getEncoder().getMECount();
+        
+        param2 = Altitude.getUserSyncCount();
         
         tempf = Altitude.getEncoder().countToAngleFloat(param2);
 
@@ -247,32 +255,35 @@ void loop()
         Serial.write(";");
         break;
 
+      //Not Assigned
       case '4':
         //Serial.write("You sent a char '4'.\n");
         break;
 
+      //Find limits on Altitude axis
       case '5':
         //Serial.write("You sent a char '5'.\n");
         break;
 
+      //Altitude axis Limit override?? to do what
       case '6':
         //Serial.write("You sent a char '6'.\t");
         break;
 
-      //SYNC USER COORD: AZIMUTH, SYNC USER COORD: ALTITUDE
+      //SYNC USER COORD: ALTITUDE, SYNC USER COORD: AZIMUTH
       case '7':
         //Serial.write("You sent a char '7'.\t");
 
-        //DRIVER.SyncToAltAz(Azimuth,Altitude), parameters in "arcminutes"
-        if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
+        //DRIVER.SyncToAltAz(Altitude,Azimuth), parameters in "arcminutes"
+        if (Altitude.getSlewing() || Azimuth.getSlewing()) return; //motor(s) busy with a command
 
-        param1 = Azimuth.getEncoder().minutesToCount(getParam1(byteArray[current]));
-        param2 = Altitude.getEncoder().minutesToCount(getParam2(byteArray[current]));
+        param1 = Altitude.getEncoder().minutesToCount(getParam1(byteArray[current]));
+        param2 = Azimuth.getEncoder().minutesToCount(getParam2(byteArray[current]));
 
-        Azimuth.setUserSyncCount(param1);
-        Altitude.setUserSyncCount(param2);
+        Altitude.setUserSyncCount(param1);
+        Azimuth.setUserSyncCount(param2);
 
-        //Serial.write("Sync User Coords (Azm, Alt), Started;");
+        Serial.write("SyncToAltAz Complete;");
         break;
 
       //SLEW ASYNCHRONOUS, RETURN IMMEDIATELY
