@@ -100,26 +100,26 @@ float MagneticEncoder::countToAngleFloat(int input)
 	//return ((input / 4096.0) * 360.0);
 }
 
-
+//TESTING : using "L" after integers to force it to be long type
 int MagneticEncoder::countToMinutes(int input)
 {
 	long temp = input % maxCount;
-	return ((temp * 675) / 128);
+	return ((temp * 675L) / 128L);
 	//return (input / 4096.0) * 21600.0;
 }
 
-
+//TESTING : using "L" after integers to force it to be long type
 int MagneticEncoder::minutesToCount(int input)
 {
-	long temp = input % 21600;
-	return ((temp * 128) / 675);
+	long temp = input % 21600L;
+	return ((temp * 128L) / 675L);
 	//return ((input / 21600.0) * 4096.0);
 }
 
 
 int MagneticEncoder::angleFloatToCount(float input)
 {
-	long temp = ((input * 512) / 45);
+	long temp = ((input * 512.0) / 45);
 	return temp;
 }
 

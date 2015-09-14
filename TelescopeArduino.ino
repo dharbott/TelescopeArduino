@@ -188,6 +188,11 @@ void loop()
         Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
         Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
 
+        Serial.print(param1);
+        Serial.print("_");
+        Serial.print(param2);
+        Serial.print('~');
+
         //SKETCHY!!!
         //Removed the while loop processME, relying solely on the
         //processME on the outside to catch everything...
@@ -206,10 +211,10 @@ void loop()
             Azimuth.processME();
           if (Altitude.getSlewing())
             Altitude.processME();
-            
-            //if we hit the hard limit, we fail
-            //so we should check alt input to avoid hard limit
-            //create a soft limit
+
+          //if we hit the hard limit, we fail
+          //so we should check alt input to avoid hard limit
+          //create a soft limit
         }
 
         Serial.write("Slewing Finished;");
@@ -230,29 +235,29 @@ void loop()
         tempf = Azimuth.getEncoder().countToAngleFloat(param2);
 
         Serial.print(tempf);
-        
+
         //Serial.print(param2 >> 8);
         //Serial.print(param2 & 255);
-        
-        Serial.write(";");
+
+        Serial.write('~');
         break;
 
-      //DRIVER.Altitude get
+      //DRIVER.Altitude get()
       case '3':
-      
+
         //param2 = Altitude.getEncoder().getMECount();
-        
+
         param2 = Altitude.getUserSyncCount();
-        
+
         tempf = Altitude.getEncoder().countToAngleFloat(param2);
 
         Serial.print(tempf);
-        
+
         //INSERT FUNCITON: INT TO BYTE PAIR - HERE
         //Serial.write(param3 >> 8);
         //Serial.write(param3 & 255);
-        
-        Serial.write(";");
+
+        Serial.write('~');
         break;
 
       //Not Assigned
@@ -323,7 +328,7 @@ void loop()
       default:
         //Serial.write("You sent a non-cmd : ");
         //Serial.write(byteArray[current][0]);
-        //Serial.write(";");
+        //Serial.write('~');
         break;
     }
 
@@ -374,49 +379,37 @@ void nextInPlus()
 void serialEvent()
 {
   byte inByte;
+  byte byteStreamLength;
+  int i = 0;
+
+  //STEP 1: byread in length of incoming byte stream
+  //STEP 2: read in number of bytes
+  //STEP 1.1: If it's a stop code??
+
 
   //keep adding instructions as long as there are bytes in serial available
   //and while there is at least one empty spot for an instruction in the buffer
   //this stringCount+1, because nextIn points to an empty spot in the buffer
   while (Serial.available() && ((stringCount + 1) < bufflen))
   {
-    inByte = Serial.read();
+    //inByte = Serial.read();
 
-    if (inByte == ';')
+    byteStreamLength = Serial.read();
+
+    for (i = 0; i < byteStreamLength; i++)
     {
-      //THIS FIX: because ';' is sent as 2 bytes,
-      //  but Serial.read() only reads in 1 byte at a time
-      //  so we have to get rid of the trailing byte
-      Serial.read();
+      inByte = Serial.read();
+      byteArray[nextIn][i] = inByte;
+    }
+
+    //if there's no terminating character '~' we'll basically
+    //discard this instruction
+    if (inByte == '~')
+    {
+      Serial.read(); //last byte should be empty, " "
       nextInPlus();
       stringCount++;
-      i = 0;
     }
-    else
-    {
-      byteArray[nextIn][i++] = inByte;
-    }
-  }
-
-  //EMERGENCY STOP -> '!'
-  //if the command is abort, abort()
-  //happens the instant command '!' is received
-  //not with command '9', command '!' is EMERGENCYSTOP
-  if (byteArray[nextIn][1] == '!')
-  {
-    Azimuth.abort();
-    Altitude.abort();
-
-    //Serial.write("Slewing (Sync) Aborted;");
-
-    //clear current abort command
-    for (int j = 0; j < codelen; j++) byteArray[current][j] = 0;
-
-    currentPlus();
-    stringCount--;
-
-    //clear all motor commands?
-    //currently it only aborts current SlewAsync command
   }
 }
 

@@ -74,6 +74,7 @@ void Axis::motorSetup(int input)
 void Axis::processME()
 {
 	int distance = 0;
+        int distance2 = 0;
 	int maxCount = encoder.getMaxCount();
 
 	distance = encoder.getCWDistance(getUserSyncCount(), target);
@@ -83,6 +84,7 @@ void Axis::processME()
 	// want to traverse clockwise, but counterclockwise
 	// so set clockwise to false, and make distance
 	// the complement
+
 	if (distance >= (maxCount / 2))
 	{
 		distance = 4095 - distance;
@@ -93,6 +95,7 @@ void Axis::processME()
 		motor.setClockwise(true);
 	}
 
+        //if distance >= 114 counts
 	if (distance >= (maxCount / 36))
 	{
 		updatePWM(255);
@@ -102,7 +105,7 @@ void Axis::processME()
 		//value jumps from 255 to 100,
 		//then jumps to 80,
 		//then jumps to 60, 40, 20
-		updatePWM((distance / 30) * 30 + 30);
+		updatePWM((distance / 40) * 40 + 40);
 	}
 	else
 	{
@@ -151,8 +154,8 @@ int Axis::getUserSyncCount()
 {
 	int maxcount = encoder.getMaxCount();
 
-	//if my current is 180d, userSync is 270d
-	//userSyncCount equals  sync = current + offset
+        //sync = current + offset
+        //offset = sync - current
 	int temp = encoder.getMECount() + countOffset;
 
 	//negative overflow?
@@ -172,11 +175,9 @@ void Axis::setUserSyncCount(int input)
 		return; //unhandled error state
 	}
 
-//sync = current + offset
-//offset = sync - current
+        //sync = current + offset
+        //offset = sync - current
 
-	//if my current is 180d, input is 270d
-	//offset equals  (new - current) = 90d
 	countOffset = input - encoder.getMECount();
 
 }
