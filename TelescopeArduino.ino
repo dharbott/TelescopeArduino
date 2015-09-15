@@ -217,8 +217,8 @@ void loop()
           //create a soft limit
         }
 
-        Serial.write("Slewing Finished;");
-
+        //Serial.write("Slewing Finished");
+        //Serial.write('~');
         break;
 
       //DRIVER.Azimuth get()
@@ -235,10 +235,6 @@ void loop()
         tempf = Azimuth.getEncoder().countToAngleFloat(param2);
 
         Serial.print(tempf);
-
-        //Serial.print(param2 >> 8);
-        //Serial.print(param2 & 255);
-
         Serial.write('~');
         break;
 
@@ -252,11 +248,6 @@ void loop()
         tempf = Altitude.getEncoder().countToAngleFloat(param2);
 
         Serial.print(tempf);
-
-        //INSERT FUNCITON: INT TO BYTE PAIR - HERE
-        //Serial.write(param3 >> 8);
-        //Serial.write(param3 & 255);
-
         Serial.write('~');
         break;
 
@@ -268,6 +259,8 @@ void loop()
       //Find limits on Altitude axis
       case '5':
         //Serial.write("You sent a char '5'.\n");
+        Serial.print("Hello Dave");
+        Serial.write('~');
         break;
 
       //Altitude axis Limit override?? to do what
@@ -288,7 +281,8 @@ void loop()
         Altitude.setUserSyncCount(param1);
         Azimuth.setUserSyncCount(param2);
 
-        Serial.write("SyncToAltAz Complete;");
+        Serial.write("SyncToAltAz Complete");
+        Serial.write('~');
         break;
 
       //SLEW ASYNCHRONOUS, RETURN IMMEDIATELY
@@ -350,7 +344,8 @@ void timeCheck()
   unsigned long timeend = micros() - timestart;
   Serial.print("TIME : ");
   Serial.print(timeend);
-  Serial.print(" microseconds.\n");
+  Serial.print(" microseconds.");
+  Serial.write('~');
 }
 
 
@@ -379,11 +374,11 @@ void nextInPlus()
 void serialEvent()
 {
   byte inByte;
-  byte byteStreamLength;
+  byte byteStringLength;
   int i = 0;
 
-  //STEP 1: byread in length of incoming byte stream
-  //STEP 2: read in number of bytes
+  //STEP 1: read in length of incoming byte stream
+  //STEP 2: read those number of bytes
   //STEP 1.1: If it's a stop code??
 
 
@@ -394,9 +389,17 @@ void serialEvent()
   {
     //inByte = Serial.read();
 
-    byteStreamLength = Serial.read();
+    byteStringLength = Serial.read();
+    byteStringLength = byteStringLength - 2;
+    //subtract 2 bytes, the first byteStringLength, and the
+    //terminating character's "blank space"
+    
+    
+    //Serial.write("byteStreamLength : ");
+    //Serial.print(byteStreamLength);
+    //Serial.write('~');
 
-    for (i = 0; i < byteStreamLength; i++)
+    for (i = 0; i < byteStringLength; i++)
     {
       inByte = Serial.read();
       byteArray[nextIn][i] = inByte;
@@ -409,6 +412,14 @@ void serialEvent()
       Serial.read(); //last byte should be empty, " "
       nextInPlus();
       stringCount++;
+      //Serial.print("received terminating character 'TILDE' (U+007E)");
+      //Serial.write('~');
+    }
+    else
+    {
+      Serial.print("Incomplete Message : byteStringLength : ");
+      Serial.print(byteStringLength + 2); 
+      Serial.write('~');      
     }
   }
 }
