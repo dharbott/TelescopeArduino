@@ -188,10 +188,10 @@ void loop()
         Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
         Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
 
-        Serial.print(param1);
-        Serial.print("_");
-        Serial.print(param2);
-        Serial.print('~');
+        //Serial.print(param1);
+        //Serial.print("_");
+        //Serial.print(param2);
+        //Serial.print('~');
 
         //SKETCHY!!!
         //Removed the while loop processME, relying solely on the
@@ -217,21 +217,13 @@ void loop()
           //create a soft limit
         }
 
-        //Serial.write("Slewing Finished");
-        //Serial.write('~');
+        Serial.write("Slewing Finished");
+        Serial.write('~');
         break;
 
       //DRIVER.Azimuth get()
       case '2':
-
-        //param2 = Azimuth.getEncoder().getMECount();
-
         param2 = Azimuth.getUserSyncCount();
-
-        //INSERT FUNCITON: INT TO BYTE PAIR - HERE
-        //ASSUME THAT COUNTTOMINUTES NEVER EXCEEDS 32K..
-        //ELSE CONVERTING TO BYTES AND SENDING IT WILL
-        //YIELD A PROBLEM WITH THE NEGATIVE BIT??
         tempf = Azimuth.getEncoder().countToAngleFloat(param2);
 
         Serial.print(tempf);
@@ -240,11 +232,7 @@ void loop()
 
       //DRIVER.Altitude get()
       case '3':
-
-        //param2 = Altitude.getEncoder().getMECount();
-
         param2 = Altitude.getUserSyncCount();
-
         tempf = Altitude.getEncoder().countToAngleFloat(param2);
 
         Serial.print(tempf);
