@@ -30,19 +30,6 @@
 #define LSOVR A0
 
 
-/**
-struct bytepair {
-	//FORMAT    2    1
-	//binary 0010 0001
-	//       MSBy LSBy
-	byte MSByte;
-	byte LSByte;
-};
-
-typedef struct bytepair myBP;
-//Structs don't get procesed until after the functions
-//problematic Arduion compiler
-**/
 
 // ByteArray, my working internal command queue
 // Arduino Serial buffer still limited at 62 bytes
@@ -207,6 +194,51 @@ void loop()
           // again, even the value somehow shifts or changes after
           // it has stopped
 
+          //backup
+          //check if we hit the limit switch
+          //if we hit the limit, backoff until no longer switch
+          //backoff then abort both motor action!!
+          //and then do nothing
+          //rely on the user to take action
+          //maybe tell the driver to throw an "invalid value exception"
+
+          if (digitalRead(LSOUT) == LOW)
+          {
+
+            //abort motion on Altitude motor
+            Altitude.abort();
+            //abort motion on Azimuth motor
+            Azimuth.abort();
+            //quit loop
+
+            delay(50);
+
+            digitalWrite(LSOVR, HIGH);
+
+
+            Altitude.getMotor().setClockwise(false);
+
+            digitalWrite(MD1_INA, HIGH);
+            digitalWrite(MD1_INB, LOW);
+            analogWrite(MD1_PWM, 60);
+            //Altitude.getMotor().setPWM(255);
+
+            //reverse altitude motor until off the switch
+
+            delay(1000);
+
+            //while (digitalRead(LSOUT) == HIGH)
+            //{
+            //}
+
+            Altitude.getMotor().setPWM(0);
+
+            digitalWrite(LSOVR, LOW);
+
+
+            break;
+          }
+
           if (Azimuth.getSlewing())
             Azimuth.processME();
           if (Altitude.getSlewing())
@@ -216,9 +248,21 @@ void loop()
           //so we should check alt input to avoid hard limit
           //create a soft limit
         }
+        //
 
-        Serial.write("Slewing Finished");
-        Serial.write('~');
+        //send error code
+        if (digitalRead(LSOUT) == LOW)
+        {
+
+          Serial.print("Slewing Finished");
+          Serial.write('~');
+        }
+        else
+        {
+
+          Serial.write("Slewing Finished");
+          Serial.write('~');
+        }
         break;
 
       //DRIVER.Azimuth get()
@@ -247,8 +291,7 @@ void loop()
       //Find limits on Altitude axis
       case '5':
         //Serial.write("You sent a char '5'.\n");
-        Serial.print("Hello Dave");
-        Serial.write('~');
+
         break;
 
       //Altitude axis Limit override?? to do what
@@ -381,8 +424,8 @@ void serialEvent()
     byteStringLength = byteStringLength - 2;
     //subtract 2 bytes, the first byteStringLength, and the
     //terminating character's "blank space"
-    
-    
+
+
     //Serial.write("byteStreamLength : ");
     //Serial.print(byteStreamLength);
     //Serial.write('~');
@@ -406,8 +449,8 @@ void serialEvent()
     else
     {
       Serial.print("Incomplete Message : byteStringLength : ");
-      Serial.print(byteStringLength + 2); 
-      Serial.write('~');      
+      Serial.print(byteStringLength + 2);
+      Serial.write('~');
     }
   }
 }
