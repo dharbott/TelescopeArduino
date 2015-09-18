@@ -55,6 +55,9 @@ Axis Altitude = Axis(
                 );
 
 
+Motor AltitudeMotor = Altitude.getMotor();
+Motor AzimuthMotor = Azimuth.getMotor();
+
 //TODO : DOUBLE CHECK PIN NUMBERS
 void setup()
 {
@@ -101,6 +104,8 @@ void setup()
   //delay(1000);
 }
 
+
+bool tempCW = false;
 
 void loop()
 {
@@ -202,41 +207,19 @@ void loop()
           //rely on the user to take action
           //maybe tell the driver to throw an "invalid value exception"
 
+          //FUTURE : Reorganize code, move operation to the Axis Object
+          //for clarity and validity
           if (digitalRead(LSOUT) == LOW)
           {
-
             //abort motion on Altitude motor
-            Altitude.abort();
+            tempCW = AltitudeMotor.isClockwise();
+            AltitudeMotor.setClockwise(!tempCW);
+            AltitudeMotor.setPWM(60);
+            
+            //Altitude.abort();
+
             //abort motion on Azimuth motor
-            Azimuth.abort();
-            //quit loop
-
-            delay(50);
-
-            digitalWrite(LSOVR, HIGH);
-
-
-            Altitude.getMotor().setClockwise(false);
-
-            digitalWrite(MD1_INA, HIGH);
-            digitalWrite(MD1_INB, LOW);
-            analogWrite(MD1_PWM, 60);
-            //Altitude.getMotor().setPWM(255);
-
-            //reverse altitude motor until off the switch
-
-            delay(1000);
-
-            //while (digitalRead(LSOUT) == HIGH)
-            //{
-            //}
-
-            Altitude.getMotor().setPWM(0);
-
-            digitalWrite(LSOVR, LOW);
-
-
-            break;
+            //Azimuth.abort();
           }
 
           if (Azimuth.getSlewing())
@@ -248,21 +231,24 @@ void loop()
           //so we should check alt input to avoid hard limit
           //create a soft limit
         }
-        //
 
-        //send error code
-        if (digitalRead(LSOUT) == LOW)
+        if (false)//(digitalRead(LSOUT) == LOW)
         {
-
-          Serial.print("Slewing Finished");
-          Serial.write('~');
+          
+          digitalWrite(LSOVR, HIGH);
+          //reverse altitude motor until off the switch
+          while (digitalRead(LSOUT) == LOW)
+          {
+            
+            //delay(10);
+          }
+          digitalWrite(LSOVR, LOW);
+          Altitude.abort();
         }
-        else
-        {
 
-          Serial.write("Slewing Finished");
-          Serial.write('~');
-        }
+
+        Serial.write("Slewing Operation Finished");
+        Serial.write('~');
         break;
 
       //DRIVER.Azimuth get()
@@ -477,3 +463,82 @@ unsigned int getParam2(byte bytesIn[])
   //return (retval);
   return (bytesIn[4] + (bytesIn[5] << 8));
 }
+
+
+
+
+/******************
+
+#define MD1_PWM 9
+#define MD1_INA 8
+#define MD1_INB 7
+
+#define LSOUT A3
+#define LSOVR A0
+
+bool state = false;
+bool motorCW = false;
+
+void setup() {
+  // put your setup code here, to run once:
+
+  pinMode(MD1_PWM, OUTPUT);
+  pinMode(MD1_INA, OUTPUT);
+  pinMode(MD1_INB, OUTPUT);
+
+  pinMode(A3, INPUT);
+  pinMode(A0, OUTPUT);
+
+  digitalWrite(A0, LOW);
+
+  Serial.begin(19200);
+
+  motorCW = true;
+  digitalWrite(MD1_INB, !motorCW);
+  digitalWrite(MD1_INA, motorCW);
+
+  analogWrite(MD1_PWM, 60);
+}
+
+void loop() {
+
+  Serial.print("override on - ");
+  Serial.print(state); Serial.print(" : limit switch status - ");
+  Serial.print(analogRead(A3)); Serial.print(" :: ");
+  Serial.println(digitalRead(A3));
+
+  delay(1000);
+
+  if (digitalRead(A3) == LOW)
+  {
+
+    digitalWrite(MD1_INB, LOW);
+    digitalWrite(MD1_INA, LOW);
+
+    delay(200);
+    
+    motorCW = !motorCW;
+    digitalWrite(MD1_INB, !motorCW);
+    digitalWrite(MD1_INA, motorCW);
+
+    digitalWrite(A0, HIGH);
+    while (digitalRead(A3) == LOW)
+    {
+      delay(50);
+    }
+    
+    digitalWrite(A0, LOW);
+    
+    digitalWrite(MD1_INB, LOW);
+    digitalWrite(MD1_INA, LOW);
+    
+    delay(200);
+    
+    motorCW = !motorCW;
+    digitalWrite(MD1_INB, !motorCW);
+    digitalWrite(MD1_INA, motorCW);
+  }
+}
+
+
+******************/
