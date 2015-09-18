@@ -105,7 +105,7 @@ void setup()
 }
 
 
-bool tempCW = false;
+static bool tempCW = false;
 
 void loop()
 {
@@ -180,72 +180,51 @@ void loop()
         Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
         Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
 
-        //Serial.print(param1);
-        //Serial.print("_");
-        //Serial.print(param2);
-        //Serial.print('~');
 
-        //SKETCHY!!!
-        //Removed the while loop processME, relying solely on the
-        //processME on the outside to catch everything...
-
-        //LOOP WHILE still processing
         while (Azimuth.getSlewing() || Altitude.getSlewing())
         {
-          //when we do processME(), we calculate the distance
-          // from current angle to target angle, but once we reach
-          // a distance of 0 (or was it 1) then getSlewing()
-          // returns false, and processME() doesn't get called
-          // again, even the value somehow shifts or changes after
-          // it has stopped
-
-          //backup
-          //check if we hit the limit switch
-          //if we hit the limit, backoff until no longer switch
-          //backoff then abort both motor action!!
-          //and then do nothing
-          //rely on the user to take action
-          //maybe tell the driver to throw an "invalid value exception"
 
           //FUTURE : Reorganize code, move operation to the Axis Object
           //for clarity and validity
-          if (digitalRead(LSOUT) == LOW)
-          {
-            //abort motion on Altitude motor
-            tempCW = AltitudeMotor.isClockwise();
-            AltitudeMotor.setClockwise(!tempCW);
-            AltitudeMotor.setPWM(60);
-            
-            //Altitude.abort();
-
-            //abort motion on Azimuth motor
-            //Azimuth.abort();
-          }
 
           if (Azimuth.getSlewing())
             Azimuth.processME();
+          
           if (Altitude.getSlewing())
             Altitude.processME();
+          
+          if (digitalRead(LSOUT) == LOW)
+          {
+            //abort motion on Altitude motor            
+            //for some reason, isClockwise is not returning
+            //the correct answer
+
+            //abort motion on Azimuth motor
+            Azimuth.abort();
+            Altitude.reverse();            
+            Altitude.updatePWM(50);
+            
+            delay(50);
+
+            digitalWrite(A0, HIGH);
+            delay(50);
+            
+            while (analogRead(A3) < 600)
+            {
+              delay(50);
+            }
+
+            digitalWrite(A0, LOW);
+
+            Altitude.abort();
+            delay(50);
+          }
+
 
           //if we hit the hard limit, we fail
           //so we should check alt input to avoid hard limit
           //create a soft limit
         }
-
-        if (false)//(digitalRead(LSOUT) == LOW)
-        {
-          
-          digitalWrite(LSOVR, HIGH);
-          //reverse altitude motor until off the switch
-          while (digitalRead(LSOUT) == LOW)
-          {
-            
-            //delay(10);
-          }
-          digitalWrite(LSOVR, LOW);
-          Altitude.abort();
-        }
-
 
         Serial.write("Slewing Operation Finished");
         Serial.write('~');
@@ -516,7 +495,7 @@ void loop() {
     digitalWrite(MD1_INA, LOW);
 
     delay(200);
-    
+
     motorCW = !motorCW;
     digitalWrite(MD1_INB, !motorCW);
     digitalWrite(MD1_INA, motorCW);
@@ -526,14 +505,14 @@ void loop() {
     {
       delay(50);
     }
-    
+
     digitalWrite(A0, LOW);
-    
+
     digitalWrite(MD1_INB, LOW);
     digitalWrite(MD1_INA, LOW);
-    
+
     delay(200);
-    
+
     motorCW = !motorCW;
     digitalWrite(MD1_INB, !motorCW);
     digitalWrite(MD1_INA, motorCW);

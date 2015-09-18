@@ -19,7 +19,7 @@ private:
 		
 public:
 		Motor();
-        Motor(int ppinPWM, int ppinInputA, int ppinInputB);
+                Motor(int ppinPWM, int ppinInputA, int ppinInputB);
 		~Motor();
 		
 		long pinOut();	//verified, change to String later

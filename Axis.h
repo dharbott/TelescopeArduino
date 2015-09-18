@@ -5,41 +5,43 @@
 #include "Motor.h"
 #include "MagneticEncoder.h"
 
-//axis class will have to 
+//axis class will have to
 //include motor object and magnetic encoder object
 //One day, it will be modified to include quad encoder?
 
 class Axis {
 
-private:
-	Motor motor;
-	MagneticEncoder encoder;
-	int target;
-	int countOffset;
-	bool clockwise;
-	int currentPWM;
-	bool slewing;
-	
-	void updatePWM(int intPWM);
+  private:
+    Motor motor;
+    MagneticEncoder encoder;
+    int target;
+    int countOffset;
+    int currentPWM;
+    bool slewing;
 
-public:
-	Axis();
-	Axis(Motor myMotor, MagneticEncoder myEncoder);
-	~Axis();
 
-	Motor getMotor();
-	MagneticEncoder getEncoder();
+  public:
+    Axis();
+    Axis(Motor myMotor, MagneticEncoder myEncoder);
+    ~Axis();
 
-	void motorSetup(int inputMECount);
-	void processME();
-	int getPWM();
-	bool getSlewing();
+    Motor getMotor();
+    MagneticEncoder getEncoder();
 
-	int getUserSyncCount();
-	void setUserSyncCount(int input);
-	
-	void abort();
-	
+    void motorSetup(int inputMECount);
+    void processME();
+    int getPWM();
+    bool getSlewing();
+    bool getClockwise();
+
+    int getUserSyncCount();
+    void setUserSyncCount(int input);
+
+    void updatePWM(int intPWM);
+    
+    void reverse();
+    void abort();
+
 };
 
 #endif
