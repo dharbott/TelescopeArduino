@@ -295,7 +295,7 @@ void loop()
       case '8':
         //Serial.write("You sent a char '8'.\t");
 
-        if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
+        //if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
 
         param1 = getParam1(byteArray[current]);
         param2 = getParam2(byteArray[current]);

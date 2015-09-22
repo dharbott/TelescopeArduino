@@ -98,16 +98,16 @@ void Axis::processME()
   {
     updatePWM(255);
   }
-  else if (distance >= 10)
+  else if (distance >= 32)
   {
     //value jumps from 255 to 100,
     //then jumps to 80,
     //then jumps to 60, 40, 20
-    updatePWM((distance / 32) * 32 + 32);
+    updatePWM((distance / 32) * 32);
   }
   else if (distance >= 1)
   {
-    updatePWM(25);
+    updatePWM(20);
   }
   else
   {
