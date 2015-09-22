@@ -54,10 +54,6 @@ Axis Altitude = Axis(
                   MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
                 );
 
-
-Motor AltitudeMotor = Altitude.getMotor();
-Motor AzimuthMotor = Azimuth.getMotor();
-
 //TODO : DOUBLE CHECK PIN NUMBERS
 void setup()
 {
@@ -119,16 +115,38 @@ void loop()
   float tempf;
 
   //Do Async Motor Actions even if no commands in queue
-  if (Azimuth.getSlewing() || (Altitude.getSlewing()))
-  {
+
+  if (Azimuth.getSlewing())
     Azimuth.processME();
+
+  if (Altitude.getSlewing())
+  {
     Altitude.processME();
 
-    //SKETCHY!!!
-    //if (!Azimuth.getSlewing()) Serial.write ("Slewing Finished;");
+    if (digitalRead(LSOUT) == LOW)
+    {
+      //abort motion on Azimuth motor
+      Azimuth.abort();
 
-    //if ((!Azimuth.getSlewing()) && (!Altitude.getSlewing()))
-    //Serial.write ("Slewing Finished;");
+      //abort motion on Altitude motor
+      Altitude.reverse();
+      Altitude.updatePWM(50);
+
+      delay(50);
+
+      digitalWrite(A0, HIGH);
+      delay(50);
+
+      while (analogRead(A3) < 600)
+      {
+        delay(50);
+      }
+
+      digitalWrite(A0, LOW);
+
+      Altitude.abort();
+      delay(50);
+    }
   }
 
   //if the command queue is not empty
@@ -167,8 +185,6 @@ void loop()
         //motorSetup determines shortest path
         //determines clockwise or counter-
 
-        //check logic, where and when to check if motor is busy
-
         //Q: Do we accept SlewAltAz Sync commands while slewing asynch?
         //A: I don't know yet
 
@@ -183,32 +199,26 @@ void loop()
 
         while (Azimuth.getSlewing() || Altitude.getSlewing())
         {
-
-          //FUTURE : Reorganize code, move operation to the Axis Object
-          //for clarity and validity
-
           if (Azimuth.getSlewing())
             Azimuth.processME();
-          
+
           if (Altitude.getSlewing())
             Altitude.processME();
-          
+
           if (digitalRead(LSOUT) == LOW)
           {
-            //abort motion on Altitude motor            
-            //for some reason, isClockwise is not returning
-            //the correct answer
-
             //abort motion on Azimuth motor
             Azimuth.abort();
-            Altitude.reverse();            
+
+            //abort motion on Altitude motor
+            Altitude.reverse();
             Altitude.updatePWM(50);
-            
+
             delay(50);
 
             digitalWrite(A0, HIGH);
             delay(50);
-            
+
             while (analogRead(A3) < 600)
             {
               delay(50);
@@ -218,12 +228,10 @@ void loop()
 
             Altitude.abort();
             delay(50);
+
+            //if we hit the hard limit, we fail
+            Serial.write("Altitude Limit Switch Triggered - ");
           }
-
-
-          //if we hit the hard limit, we fail
-          //so we should check alt input to avoid hard limit
-          //create a soft limit
         }
 
         Serial.write("Slewing Operation Finished");
@@ -254,12 +262,14 @@ void loop()
         break;
 
       //Find limits on Altitude axis
+      //and compute rate limit on Altitude axis
+      //but we might need a RTC, and some vacant pins??
       case '5':
         //Serial.write("You sent a char '5'.\n");
 
         break;
 
-      //Altitude axis Limit override?? to do what
+      //Find limits on rotation
       case '6':
         //Serial.write("You sent a char '6'.\t");
         break;
@@ -285,19 +295,16 @@ void loop()
       case '8':
         //Serial.write("You sent a char '8'.\t");
 
-        //FORMAT : CODE - Azimuth in ArcMin - Altitude in ArcMin
-        //This function determines whether going clockwise or counter
-        //is the shortest path, and takes it
-
         if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
 
         param1 = getParam1(byteArray[current]);
         param2 = getParam2(byteArray[current]);
 
         Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
-        //Altitude.motorSetup(Altitude.getEncoder().mintesToCount(param2));
+        Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
 
-        //Serial.write("Slewing Async Started;");
+        Serial.write("Slewing Async Started");
+        Serial.write('~');
         break;
 
       //SO, is there anything there to notify the Driver that
@@ -310,11 +317,11 @@ void loop()
         Azimuth.abort();
         Altitude.abort();
 
-        //Serial.write("Slewing Async Aborted;");
+        Serial.write("Slewing Async Aborted");
+        Serial.write('~');
         break;
 
       //We can make as many cases as there are ASCII 8-bit characters
-
       default:
         //Serial.write("You sent a non-cmd : ");
         //Serial.write(byteArray[current][0]);
