@@ -230,7 +230,9 @@ void loop()
             delay(50);
 
             //if we hit the hard limit, we fail
-            Serial.write("Altitude Limit Switch Triggered - ");
+            //Serial.write("Altitude Limit Switch Triggered - ");
+            //Q: IT SHOULDN"T THROW EXCEPTION ON LIMIT????
+            //A: it's not handled in the documentation....
           }
         }
 
@@ -256,9 +258,17 @@ void loop()
         Serial.write('~');
         break;
 
-      //Not Assigned
+      //MOVE(Axis, Rate)
+      // Axis 1 -> Altitude
+      // Axis 2 -> Azimuth
+      // Rate -> originally intended as deg/sec, but now assigned
+      //         as arcminutes/second
       case '4':
         //Serial.write("You sent a char '4'.\n");
+        
+        
+        
+        
         break;
 
       //Find limits on Altitude axis

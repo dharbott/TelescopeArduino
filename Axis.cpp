@@ -85,7 +85,7 @@ void Axis::processME()
 
   if (distance >= (maxCount / 2))
   {
-    distance = 4095 - distance;
+    distance = 4096 - distance;
     motor.setClockwise(false);
   }
   else
@@ -94,20 +94,20 @@ void Axis::processME()
   }
 
   //if distance >= 114 counts
-  if (distance >= (maxCount / 36))
+  if (distance >= (maxCount / 64))
   {
     updatePWM(255);
   }
-  else if (distance >= 32)
+  else if (distance >= 25)
   {
     //value jumps from 255 to 100,
     //then jumps to 80,
     //then jumps to 60, 40, 20
-    updatePWM((distance / 32) * 32);
+    updatePWM((distance / 25) * 25);
   }
-  else if (distance >= 1)
+  else if (distance > 0)
   {
-    updatePWM(20);
+    updatePWM(22);
   }
   else
   {
