@@ -145,6 +145,22 @@ void Axis::updatePWM(int intPWM)
 }
 
 
+
+void Axis::movePWM(int intPWM)
+{
+  motor.setClockwise(intPWM > 0);
+  
+  if (intPWM < 0) intPWM = -intPWM;
+    
+  if (intPWM != currentPWM)
+  {
+    currentPWM = intPWM;
+    motor.setPWM(currentPWM);
+  }
+}
+
+
+
 // Changes direction of the motor
 void Axis::reverse()
 {

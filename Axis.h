@@ -39,6 +39,8 @@ class Axis {
 
     void updatePWM(int intPWM);
     
+    void movePWM(int intPWM);
+    
     void reverse();
     void abort();
 

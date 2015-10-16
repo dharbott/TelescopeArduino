@@ -30,7 +30,6 @@
 #define LSOVR A0
 
 
-
 // ByteArray, my working internal command queue
 // Arduino Serial buffer still limited at 62 bytes
 // I wanted the command buffer to be fast and stable
@@ -265,10 +264,39 @@ void loop()
       //         as arcminutes/second
       case '4':
         //Serial.write("You sent a char '4'.\n");
-        
-        
-        
-        
+
+        //if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
+
+        param1 = getParam(byteArray[current], 2);
+        param2 = getParam(byteArray[current], 4);
+        //Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
+        //Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
+
+        //Convert from Arcminutes/Second to some PWM value
+        //crappy style
+        param2 = param2 / 60;
+
+        if (param1 == '1')
+        {
+          //Azimuth.movePWM(param2);
+          Serial.write("Speed : "); Serial.print(param2, DEC);
+          Serial.write(" || ");
+          
+          Serial.write("Move Axis -Azimuth- Started");
+          Serial.write('~');
+        }
+        else if (param1 == '2')
+        {
+          //Altitude.movePWM(param2); 
+          Serial.write("Move Axis -Altitude- Started");
+          Serial.write('~');
+        }
+        else
+        {
+          Serial.write("Move Axis Fail");
+          Serial.write('~');
+        }
+
         break;
 
       //Find limits on Altitude axis
@@ -435,6 +463,13 @@ void serialEvent()
       Serial.write('~');
     }
   }
+}
+
+
+//dangerous??!
+unsigned int getParam(byte bytesIn[], int pos)
+{
+  return (bytesIn[pos] + (bytesIn[pos + 1] << 8));
 }
 
 
