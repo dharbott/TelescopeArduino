@@ -134,7 +134,6 @@ int MagneticEncoder::getCCWDistance(int current, int target) {
 }
 
 
-//WE"RE NOT TOUCHING OFFSETS YET
 //TODO LATER
 void MagneticEncoder::setOffset(int input)
 {

@@ -15,6 +15,7 @@ class Axis {
     Motor motor;
     MagneticEncoder encoder;
     int target;
+    int rate;
     int countOffset;
     int currentPWM;
     bool slewing;
@@ -29,7 +30,7 @@ class Axis {
     MagneticEncoder getEncoder();
 
     void motorSetup(int inputMECount);
-    void processME();
+    void processPosition();
     int getPWM();
     bool getSlewing();
     bool getClockwise();
@@ -40,6 +41,8 @@ class Axis {
     void updatePWM(int intPWM);
     
     void movePWM(int intPWM);
+    void setRate(int intRate);
+    void processRate();
     
     void reverse();
     void abort();

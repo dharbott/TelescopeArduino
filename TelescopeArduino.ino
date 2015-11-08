@@ -116,11 +116,11 @@ void loop()
   //Do Async Motor Actions even if no commands in queue
 
   if (Azimuth.getSlewing())
-    Azimuth.processME();
+    Azimuth.processPosition();
 
   if (Altitude.getSlewing())
   {
-    Altitude.processME();
+    Altitude.processPosition();
 
     if (digitalRead(LSOUT) == LOW)
     {
@@ -199,10 +199,10 @@ void loop()
         while (Azimuth.getSlewing() || Altitude.getSlewing())
         {
           if (Azimuth.getSlewing())
-            Azimuth.processME();
+            Azimuth.processPosition();
 
           if (Altitude.getSlewing())
-            Altitude.processME();
+            Altitude.processPosition();
 
           if (digitalRead(LSOUT) == LOW)
           {

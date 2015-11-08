@@ -3,13 +3,13 @@
 Axis::Axis()
 {
   //empty constructors??
-  //not the best idea
   motor = Motor();
   encoder = MagneticEncoder();
   target = 0;
   countOffset = 0;
   currentPWM = 0;
   slewing = false;
+
 }
 
 
@@ -21,6 +21,9 @@ Axis::Axis(Motor myMotor, MagneticEncoder myEncoder)
   countOffset = 0;
   currentPWM = 0;
   slewing = false;
+  
+  //state = 0, 1, or 2
+  //      0 is parked, 1 is slewing to position, 2 is moving at a rate
 }
 
 
@@ -69,7 +72,7 @@ void Axis::motorSetup(int input)
 
 
 // CHANGING
-void Axis::processME()
+void Axis::processPosition()
 {
   int distance = 0;
   int distance2 = 0;
@@ -160,13 +163,24 @@ void Axis::movePWM(int intPWM)
 }
 
 
+void Axis::setRate(int intRate)
+{
+  rate = intRate;
+}
+
+
+void Axis::processRate()
+{
+  
+  
+}
+
+
 
 // Changes direction of the motor
 void Axis::reverse()
 {
   motor.setClockwise(!motor.isClockwise());
-
-
 }
 
 
