@@ -139,6 +139,13 @@ bool Axis::getClockwise()
 }
 
 
+void Axis::setClockwise(bool dir)
+{
+  motor.setClockwise(dir); 
+  
+}
+
+
 void Axis::updatePWM(int intPWM)
 {
   if (intPWM != currentPWM)
@@ -184,13 +191,13 @@ int Axis::getRate()
   int distanceAB = -1;
 
   positionA = encoder.readPosition();
-  delay(500);
+  delay(1000);
   positionB = encoder.readPosition();
 
   if (motor.isClockwise())
     distanceAB = encoder.getCWDistance(positionA, positionB);
   else
-    distanceAB = encoder.getCWDistance(positionB, positionA);
+    distanceAB = encoder.getCCWDistance(positionA, positionB);
 
   return distanceAB;
   

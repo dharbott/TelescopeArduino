@@ -425,6 +425,10 @@ void serialEvent()
   byte inByte;
   byte byteStringLength;
   int i = 0;
+  int upperbound = 0;
+  int lowerbound = 0;
+  int getrated = 0;
+  bool dire = true;
 
   //STEP 1: read in length of incoming byte stream
   //STEP 2: read those number of bytes
@@ -442,66 +446,79 @@ void serialEvent()
 
 
     //************************************************************//
-    
+
     if (byteStringLength == '5') {
       
+      dire = !(Serial.read() == '-');
+
       while (Serial.available()) Serial.read();
-      
+
       Serial.println("Hello David");
       Serial.println("starting speed tests");
-      
-      /***
-      
+
       //Hardest part is overcoming static friction to start moving
       //but once moving, it may be capable of slower speeds
-      
+
       //TEST part 1, minimal voltage for movement from a standstill
-      
+
       //TEST part 2, minimal voltage for movement while already moving
-      
+
       //
-      // PART 1. Direction 1 
+      // PART 1. Direction 1
       //////
       
+      /***RESULTS
+      AZUMITH:
+        counterclockwise : minimum pwm is 15-17, for 2 count per 1000ms
+        clockwise : minimum pwm is 15-17, for 2 count per 1000ms
+        -maybe able to achieve lower PWM values with fully charged battery!
+      ALTITUDE:
+        clockwise (decreasing angle): min is 18-20, rate 2-3count/1000ms
+        counterclockwise (increasing angle): min is 16-18, rate 2-3count/1000ms
+        -maybe able to achieve lower PWM values with fully charged battery!
+      ***/
+
       //SET HIGH,LOW //clockwise??
-      motor.setClockwise(true);
-       
-      i = 255
-      upperbound = 255;
-      lower bound = 0;
+      Serial.print(" -starting motor PWM test, clockwise="); Serial.println(dire);
+      delay(1000);
+
+      i = 128;
+      upperbound = 128;
+      lowerbound = 0;
       while (true)
       {
-        analogWrite(i);
+
+        Serial.print("pwm: "); Serial.println(i);
+
+        Altitude.setClockwise(dire);
+        Altitude.updatePWM(i);
         delay(1000);
-        getrated = getRate(); //sample time 1 second I think
-        analogWrite(0);
-        delay(1000); //slow down and stop
-        
-        if (getrated > 0)
+        getrated = Altitude.getRate(); //sample time 1 second I think
+
+        Serial.print("rate: "); Serial.println(getrated);
+        Altitude.updatePWM(0);
+        delay(500); //slow down and stop
+
+        if (getrated > 1)
           //upperbound becomes old i value
           upperbound = i;
-          
-        else if(getrated <= 0)
+        else
           //lowerbound becomes old i value
           lowerbound = i;
-        
-        if ((upperbound - lowerbound) <= 2) 
-          //distance from minimum working PWM and
-          //non working pwm is 2 pwm, i guess thats
-          //close enough
-          //we found our value
-          break; //return pwm value upperbound
-        
+
+        if ((upperbound - lowerbound) <= 2)
+          break;
+
         i = (upperbound + lowerbound) / 2;
       }
-      
-      ***/
-      
+
+      Serial.println("Minimum PWM for Altitude motor: ");
+      Serial.println(upperbound);
       return;
-      
+
     }
-    
-    
+
+
     //************************************************************//
 
 

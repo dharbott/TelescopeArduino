@@ -34,6 +34,7 @@ class Axis {
     int getPWM();
     bool getSlewing();
     bool getClockwise();
+    void setClockwise(bool dir);
 
     int getUserSyncCount();
     void setUserSyncCount(int input);
