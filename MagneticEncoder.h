@@ -24,6 +24,9 @@ public:
 	//WRAPPER, not necessary??
 	int getMECount();
 	int getMaxCount();
+//        int getMERate();
+//        int getMERateArcminutes();
+//        float getMERateAngleFloat();
 
 	void setOffset(int offset);
 	int getOffset();

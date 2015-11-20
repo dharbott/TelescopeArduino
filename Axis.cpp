@@ -21,7 +21,7 @@ Axis::Axis(Motor myMotor, MagneticEncoder myEncoder)
   countOffset = 0;
   currentPWM = 0;
   slewing = false;
-  
+
   //state = 0, 1, or 2
   //      0 is parked, 1 is slewing to position, 2 is moving at a rate
 }
@@ -101,16 +101,16 @@ void Axis::processPosition()
   {
     updatePWM(255);
   }
-  else if (distance >= 25)
+  else if (distance >= 32)
   {
     //value jumps from 255 to 100,
     //then jumps to 80,
     //then jumps to 60, 40, 20
-    updatePWM((distance / 25) * 25);
+    updatePWM((distance / 32) * 32);
   }
-  else if (distance > 0)
+  else if (distance > 1)
   {
-    updatePWM(22);
+    updatePWM(20);
   }
   else
   {
@@ -138,6 +138,7 @@ bool Axis::getClockwise()
 
 }
 
+
 void Axis::updatePWM(int intPWM)
 {
   if (intPWM != currentPWM)
@@ -152,9 +153,9 @@ void Axis::updatePWM(int intPWM)
 void Axis::movePWM(int intPWM)
 {
   motor.setClockwise(intPWM > 0);
-  
+
   if (intPWM < 0) intPWM = -intPWM;
-    
+
   if (intPWM != currentPWM)
   {
     currentPWM = intPWM;
@@ -171,8 +172,38 @@ void Axis::setRate(int intRate)
 
 void Axis::processRate()
 {
+
+
+}
+
+
+int Axis::getRate()
+{
+  int positionA = -1;
+  int positionB = -1;
+  int distanceAB = -1;
+
+  positionA = encoder.readPosition();
+  delay(500);
+  positionB = encoder.readPosition();
+
+  if (motor.isClockwise())
+    distanceAB = encoder.getCWDistance(positionA, positionB);
+  else
+    distanceAB = encoder.getCWDistance(positionB, positionA);
+
+  return distanceAB;
   
-  
+  /***
+    if (motor.isClockwise())
+    {
+      return encoder.getCWDistance (positionA, encoder.readPosition());
+    }
+    else
+    {
+      return encoder.getCWDistance (encoder.readPosition(), positionA);
+    }
+    ***/
 }
 
 

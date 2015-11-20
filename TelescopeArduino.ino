@@ -160,6 +160,10 @@ void loop()
     switch (byteArray[current][0])
     {
 
+
+      // NOT USED!!!
+      //
+
       //CHECK IF SLEWING ASYNCHRONOUS, MOTORS BUSY
       case '0':
         //Serial.write("You sent a char '0'.\n");
@@ -281,13 +285,13 @@ void loop()
           //Azimuth.movePWM(param2);
           Serial.write("Speed : "); Serial.print(param2, DEC);
           Serial.write(" || ");
-          
+
           Serial.write("Move Axis -Azimuth- Started");
           Serial.write('~');
         }
         else if (param1 == '2')
         {
-          //Altitude.movePWM(param2); 
+          //Altitude.movePWM(param2);
           Serial.write("Move Axis -Altitude- Started");
           Serial.write('~');
         }
@@ -301,14 +305,18 @@ void loop()
 
       //Find limits on Altitude axis
       //and compute rate limit on Altitude axis
-      //but we might need a RTC, and some vacant pins??
+      //and store internally, temporarily??
+      //maybe we can invest in flash memory
       case '5':
         //Serial.write("You sent a char '5'.\n");
-
+        Serial.println("[result]");
         break;
 
       //Find limits on rotation
       case '6':
+
+        Serial.print(Altitude.getRate());
+        Serial.write('~');
         //Serial.write("You sent a char '6'.\t");
         break;
 
@@ -431,6 +439,72 @@ void serialEvent()
     //inByte = Serial.read();
 
     byteStringLength = Serial.read();
+
+
+    //************************************************************//
+    
+    if (byteStringLength == '5') {
+      
+      while (Serial.available()) Serial.read();
+      
+      Serial.println("Hello David");
+      Serial.println("starting speed tests");
+      
+      /***
+      
+      //Hardest part is overcoming static friction to start moving
+      //but once moving, it may be capable of slower speeds
+      
+      //TEST part 1, minimal voltage for movement from a standstill
+      
+      //TEST part 2, minimal voltage for movement while already moving
+      
+      //
+      // PART 1. Direction 1 
+      //////
+      
+      //SET HIGH,LOW //clockwise??
+      motor.setClockwise(true);
+       
+      i = 255
+      upperbound = 255;
+      lower bound = 0;
+      while (true)
+      {
+        analogWrite(i);
+        delay(1000);
+        getrated = getRate(); //sample time 1 second I think
+        analogWrite(0);
+        delay(1000); //slow down and stop
+        
+        if (getrated > 0)
+          //upperbound becomes old i value
+          upperbound = i;
+          
+        else if(getrated <= 0)
+          //lowerbound becomes old i value
+          lowerbound = i;
+        
+        if ((upperbound - lowerbound) <= 2) 
+          //distance from minimum working PWM and
+          //non working pwm is 2 pwm, i guess thats
+          //close enough
+          //we found our value
+          break; //return pwm value upperbound
+        
+        i = (upperbound + lowerbound) / 2;
+      }
+      
+      ***/
+      
+      return;
+      
+    }
+    
+    
+    //************************************************************//
+
+
     byteStringLength = byteStringLength - 2;
     //subtract 2 bytes, the first byteStringLength, and the
     //terminating character's "blank space"
@@ -439,6 +513,7 @@ void serialEvent()
     //Serial.write("byteStreamLength : ");
     //Serial.print(byteStreamLength);
     //Serial.write('~');
+
 
     for (i = 0; i < byteStringLength; i++)
     {

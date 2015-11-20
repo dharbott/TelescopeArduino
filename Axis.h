@@ -44,6 +44,8 @@ class Axis {
     void setRate(int intRate);
     void processRate();
     
+    int getRate();
+    
     void reverse();
     void abort();
 
