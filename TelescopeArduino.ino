@@ -172,12 +172,14 @@ void loop()
         {
           //Serial.write("Motors Busy;");
           //return; //motor(s) busy with a command
+          Serial.write("true");
         }
         else
         {
           //Serial.write("Ready;");
+          Serial.write("false");
         }
-
+        Serial.write('~');
         break;
 
       //SLEW TO ALT AZM SYNCHRONOUS, RETURN WHEN DONE
@@ -309,7 +311,7 @@ void loop()
       //maybe we can invest in flash memory
       case '5':
         //Serial.write("You sent a char '5'.\n");
-        Serial.println("[result]");
+        //Serial.println("[result]");
         break;
 
       //Find limits on rotation
@@ -445,83 +447,6 @@ void serialEvent()
     byteStringLength = Serial.read();
 
 
-    //************************************************************//
-
-    if (byteStringLength == '5') {
-      
-      dire = !(Serial.read() == '-');
-
-      while (Serial.available()) Serial.read();
-
-      Serial.println("Hello David");
-      Serial.println("starting speed tests");
-
-      //Hardest part is overcoming static friction to start moving
-      //but once moving, it may be capable of slower speeds
-
-      //TEST part 1, minimal voltage for movement from a standstill
-
-      //TEST part 2, minimal voltage for movement while already moving
-
-      //
-      // PART 1. Direction 1
-      //////
-      
-      /***RESULTS
-      AZUMITH:
-        counterclockwise : minimum pwm is 15-17, for 2 count per 1000ms
-        clockwise : minimum pwm is 15-17, for 2 count per 1000ms
-        -maybe able to achieve lower PWM values with fully charged battery!
-      ALTITUDE:
-        clockwise (decreasing angle): min is 18-20, rate 2-3count/1000ms
-        counterclockwise (increasing angle): min is 16-18, rate 2-3count/1000ms
-        -maybe able to achieve lower PWM values with fully charged battery!
-      ***/
-
-      //SET HIGH,LOW //clockwise??
-      Serial.print(" -starting motor PWM test, clockwise="); Serial.println(dire);
-      delay(1000);
-
-      i = 128;
-      upperbound = 128;
-      lowerbound = 0;
-      while (true)
-      {
-
-        Serial.print("pwm: "); Serial.println(i);
-
-        Altitude.setClockwise(dire);
-        Altitude.updatePWM(i);
-        delay(1000);
-        getrated = Altitude.getRate(); //sample time 1 second I think
-
-        Serial.print("rate: "); Serial.println(getrated);
-        Altitude.updatePWM(0);
-        delay(500); //slow down and stop
-
-        if (getrated > 1)
-          //upperbound becomes old i value
-          upperbound = i;
-        else
-          //lowerbound becomes old i value
-          lowerbound = i;
-
-        if ((upperbound - lowerbound) <= 2)
-          break;
-
-        i = (upperbound + lowerbound) / 2;
-      }
-
-      Serial.println("Minimum PWM for Altitude motor: ");
-      Serial.println(upperbound);
-      return;
-
-    }
-
-
-    //************************************************************//
-
-
     byteStringLength = byteStringLength - 2;
     //subtract 2 bytes, the first byteStringLength, and the
     //terminating character's "blank space"
@@ -587,6 +512,85 @@ unsigned int getParam2(byte bytesIn[])
   return (bytesIn[4] + (bytesIn[5] << 8));
 }
 
+
+/***RESULTS
+AZUMITH:
+  counterclockwise : minimum pwm is 15-17, for 2 count per 1000ms
+  clockwise : minimum pwm is 15-17, for 2 count per 1000ms
+  -maybe able to achieve lower PWM values with fully charged battery!
+ALTITUDE:
+  clockwise (decreasing angle): min is 18-20, rate 2-3count/1000ms
+  counterclockwise (increasing angle): min is 16-18, rate 2-3count/1000ms
+  -maybe able to achieve lower PWM values with fully charged battery!
+***/
+
+
+/********************************************
+
+if {//(byteStringLength == '5') {
+
+  dire = !(Serial.read() == '-');
+
+  while (Serial.available()) Serial.read();
+
+  Serial.println("Hello David");
+  Serial.println("starting speed tests");
+
+  //Hardest part is overcoming static friction to start moving
+  //but once moving, it may be capable of slower speeds
+
+  //TEST part 1, minimal voltage for movement from a standstill
+
+  //TEST part 2, minimal voltage for movement while already moving
+
+  //
+  // PART 1. Direction 1
+  //////
+
+
+
+  //SET HIGH,LOW //clockwise??
+  Serial.print(" -starting motor PWM test, clockwise="); Serial.println(dire);
+  delay(1000);
+
+  i = 128;
+  upperbound = 128;
+  lowerbound = 0;
+  while (true)
+  {
+
+    Serial.print("pwm: "); Serial.println(i);
+
+    Altitude.setClockwise(dire);
+    Altitude.updatePWM(i);
+    delay(1000);
+    getrated = Altitude.getRate(); //sample time 1 second I think
+
+    Serial.print("rate: "); Serial.println(getrated);
+    Altitude.updatePWM(0);
+    delay(500); //slow down and stop
+
+    if (getrated > 1)
+      //upperbound becomes old i value
+      upperbound = i;
+    else
+      //lowerbound becomes old i value
+      lowerbound = i;
+
+    if ((upperbound - lowerbound) <= 2)
+      break;
+
+    i = (upperbound + lowerbound) / 2;
+  }
+
+  Serial.println("Minimum PWM for Altitude motor: ");
+  Serial.println(upperbound);
+  return;
+
+}
+
+
+********************************************************/
 
 
 

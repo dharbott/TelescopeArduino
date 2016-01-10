@@ -135,14 +135,12 @@ bool Axis::getSlewing()
 bool Axis::getClockwise()
 {
   return motor.isClockwise();
-
 }
 
 
 void Axis::setClockwise(bool dir)
 {
-  motor.setClockwise(dir); 
-  
+  motor.setClockwise(dir);
 }
 
 
@@ -189,6 +187,7 @@ int Axis::getRate()
   int positionA = -1;
   int positionB = -1;
   int distanceAB = -1;
+  int distanceBA = -1;
 
   positionA = encoder.readPosition();
   delay(1000);
@@ -200,7 +199,21 @@ int Axis::getRate()
     distanceAB = encoder.getCCWDistance(positionA, positionB);
 
   return distanceAB;
-  
+  //There are bugs in the mechanical system
+  //so each axes has a tendency to 'roll back' on itself, resulting in 4095 results
+  //so instead, we just pick the smalelr value of the two, easy!
+
+
+  /***
+
+  distanceAB = encoder.getCWDistance(positionA, positionB);
+  distanceBA = encoder.getCCWDistance(positionA, positionB);
+
+  if (distanceAB < distanceBA) return distanceAB;
+  else return distanceBA;
+
+  ***/
+
   /***
     if (motor.isClockwise())
     {
