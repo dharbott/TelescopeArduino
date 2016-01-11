@@ -245,6 +245,8 @@ void loop()
         Serial.write('~');
         break;
 
+      //TODO: combine case '2' and case '3' into one instruction
+
       //DRIVER.Azimuth get()
       case '2':
         param2 = Azimuth.getUserSyncCount();
@@ -299,30 +301,69 @@ void loop()
         }
         else
         {
-          Serial.write("Move Axis Fail");
+          Serial.write("Move Axis Fail : Unknown axis");
           Serial.write('~');
         }
 
         break;
 
-      //Find limits on Altitude axis
-      //and compute rate limit on Altitude axis
-      //and store internally, temporarily??
-      //maybe we can invest in flash memory
+
+      /***
+      This command is to be called during the setup phase, using the 
+      setup/preferences dialog box I think...
+       - 1) Find limits on Altitude axis
+       - 2) and compute rate limit on Altitude axis
+       - 3) and store internally, temporarily??
+      **/
+      
       case '5':
         //Serial.write("You sent a char '5'.\n");
         //Serial.println("[result]");
+
+        /***
+        1) Find hard limits on Altitude axis
+         - rotate up (positive direction / counterclockwise direction)
+         - record stopping position
+         - rotate down (negative direction / clockwise direction)
+         - record stopping position
+         - set that position as 0deg plus some safety margin
+         
+         ::: incorporate soft limits in the system
+        ***/
+        
+        /***
+        2.0) Find out Battery Power Level
+        2.1) compute rate limit on Altitude axis
+         - do some speed tests
+         - first move to 0deg position, as it's the hardest to move in that position
+         - copypasta the speed measuring code
+         - find rate for moving clockwise & counterclockwise, use bigger as the minimum rate
+         - maybe repeat speed tests each 10deg-th position?? take the largest 'pwm' value and set that as
+         
+        2.2) compute rate limits on the Azimuth axis
+         - copypasta the speed measuring code
+         - find rate for moving cw & ccw, use bigger as mininum rate
+         - maybe repeat speed tests each 15deg-th position??
+        ***/
+        
+        /***
+        3) should we store these values and limits internally?
+          - how? flash memory? use memory on the arduino? can it be done?        
+        ***/
+
+
+        Serial.write("command 5");
+        Serial.write('~');
         break;
 
-      //Find limits on rotation
+      //NOT ASSIGNED
       case '6':
-
-        Serial.print(Altitude.getRate());
+        Serial.write("commmand 6");
         Serial.write('~');
         //Serial.write("You sent a char '6'.\t");
         break;
 
-      //SYNC USER COORD: ALTITUDE, SYNC USER COORD: AZIMUTH
+      //SYNC USER topocentric local coordinates: ALTITUDE, AZIMUTH
       case '7':
         //Serial.write("You sent a char '7'.\t");
 
@@ -339,6 +380,8 @@ void loop()
         Serial.write('~');
         break;
 
+
+      // ****** TODO: add in limit switch code ******
       //SLEW ASYNCHRONOUS, RETURN IMMEDIATELY
       case '8':
         //Serial.write("You sent a char '8'.\t");
@@ -356,7 +399,8 @@ void loop()
         break;
 
       //SO, is there anything there to notify the Driver that
-      //SlewAsync finished? Not yet....
+      //SlewAsync finished? Not yet, so the driver must use the Slewing() command
+      //to check periodically if it's still slewing, which makes sense
 
       //DRIVER.ABORTSLEW()
       case '9':
