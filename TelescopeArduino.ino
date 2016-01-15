@@ -1,6 +1,7 @@
 #include "Motor.h"
 #include "MagneticEncoder.h"
 #include "Axis.h"
+#include "Altitude.h"
 
 #define bufflen 8
 #define codelen 16
@@ -43,12 +44,19 @@ int current = 0;
 int nextIn = 0;
 //bool slewingAsync = false;
 
+
+int altitude_max = 0;
+int altitude_min = 0;
+
+
+
+
 Axis Azimuth = Axis(
                  Motor(MD2_PWM, MD2_INA, MD2_INB),
                  MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME1_DATA_PIN)
                );
 
-Axis Altitude = Axis(
+Axis AltitudeAxis = Altitude(
                   Motor(MD1_PWM, MD1_INA, MD1_INB),
                   MagneticEncoder(SELECT_PIN, CLOCK_PIN, ME2_DATA_PIN)
                 );
@@ -118,9 +126,9 @@ void loop()
   if (Azimuth.getSlewing())
     Azimuth.processPosition();
 
-  if (Altitude.getSlewing())
+  if (AltitudeAxis.getSlewing())
   {
-    Altitude.processPosition();
+    AltitudeAxis.processPosition();
 
     if (digitalRead(LSOUT) == LOW)
     {
@@ -128,8 +136,8 @@ void loop()
       Azimuth.abort();
 
       //abort motion on Altitude motor
-      Altitude.reverse();
-      Altitude.updatePWM(50);
+      AltitudeAxis.reverse();
+      AltitudeAxis.updatePWM(50);
 
       delay(50);
 
@@ -143,7 +151,7 @@ void loop()
 
       digitalWrite(A0, LOW);
 
-      Altitude.abort();
+      AltitudeAxis.abort();
       delay(50);
     }
   }
@@ -168,7 +176,7 @@ void loop()
       case '0':
         //Serial.write("You sent a char '0'.\n");
 
-        if (Azimuth.getSlewing() || Altitude.getSlewing())
+        if (Azimuth.getSlewing() || AltitudeAxis.getSlewing())
         {
           //Serial.write("Motors Busy;");
           //return; //motor(s) busy with a command
@@ -193,53 +201,12 @@ void loop()
         //Q: Do we accept SlewAltAz Sync commands while slewing asynch?
         //A: I don't know yet
 
-        //if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a slew async! RETURN
+        //if (Azimuth.getSlewing() || AltitudeAxis.getSlewing()) return; //motor(s) busy with a slew async! RETURN
 
         param1 = getParam1(byteArray[current]);
         param2 = getParam2(byteArray[current]);
 
-        Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
-        Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
-
-
-        while (Azimuth.getSlewing() || Altitude.getSlewing())
-        {
-          if (Azimuth.getSlewing())
-            Azimuth.processPosition();
-
-          if (Altitude.getSlewing())
-            Altitude.processPosition();
-
-          if (digitalRead(LSOUT) == LOW)
-          {
-            //abort motion on Azimuth motor
-            Azimuth.abort();
-
-            //abort motion on Altitude motor
-            Altitude.reverse();
-            Altitude.updatePWM(50);
-
-            delay(50);
-
-            digitalWrite(A0, HIGH);
-            delay(50);
-
-            while (analogRead(A3) < 600)
-            {
-              delay(50);
-            }
-
-            digitalWrite(A0, LOW);
-
-            Altitude.abort();
-            delay(50);
-
-            //if we hit the hard limit, we fail
-            //Serial.write("Altitude Limit Switch Triggered - ");
-            //Q: IT SHOULDN"T THROW EXCEPTION ON LIMIT????
-            //A: it's not handled in the documentation....
-          }
-        }
+        SlewAltAz(param1, param2);
 
         Serial.write("Slewing Operation Finished");
         Serial.write('~');
@@ -258,8 +225,8 @@ void loop()
 
       //DRIVER.Altitude get()
       case '3':
-        param2 = Altitude.getUserSyncCount();
-        tempf = Altitude.getEncoder().countToAngleFloat(param2);
+        param2 = AltitudeAxis.getUserSyncCount();
+        tempf = AltitudeAxis.getEncoder().countToAngleFloat(param2);
 
         Serial.print(tempf);
         Serial.write('~');
@@ -273,12 +240,12 @@ void loop()
       case '4':
         //Serial.write("You sent a char '4'.\n");
 
-        //if (Azimuth.getSlewing() || Altitude.getSlewing()) return; //motor(s) busy with a command
+        //if (Azimuth.getSlewing() || AltitudeAxis.getSlewing()) return; //motor(s) busy with a command
 
         param1 = getParam(byteArray[current], 2);
         param2 = getParam(byteArray[current], 4);
         //Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
-        //Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
+        //AltitudeAxis.motorSetup(AltitudeAxis.getEncoder().minutesToCount(param2));
 
         //Convert from Arcminutes/Second to some PWM value
         //crappy style
@@ -295,7 +262,7 @@ void loop()
         }
         else if (param1 == '2')
         {
-          //Altitude.movePWM(param2);
+          //AltitudeAxis.movePWM(param2);
           Serial.write("Move Axis -Altitude- Started");
           Serial.write('~');
         }
@@ -309,13 +276,13 @@ void loop()
 
 
       /***
-      This command is to be called during the setup phase, using the 
+      This command is to be called during the setup phase, using the
       setup/preferences dialog box I think...
        - 1) Find limits on Altitude axis
        - 2) and compute rate limit on Altitude axis
        - 3) and store internally, temporarily??
-      **/
-      
+      ***/
+
       case '5':
         //Serial.write("You sent a char '5'.\n");
         //Serial.println("[result]");
@@ -327,28 +294,36 @@ void loop()
          - rotate down (negative direction / clockwise direction)
          - record stopping position
          - set that position as 0deg plus some safety margin
-         
+
          ::: incorporate soft limits in the system
         ***/
         
         /***
+        SlewAltAz (param1, param2 - 90deg)
+        set current angle = 0
+        SlewAltAz (param1, param2 + 90deg)
+        check current angle, should be around 84deg???
+        ***/
+        
+        /***
         2.0) Find out Battery Power Level
+
         2.1) compute rate limit on Altitude axis
          - do some speed tests
          - first move to 0deg position, as it's the hardest to move in that position
          - copypasta the speed measuring code
          - find rate for moving clockwise & counterclockwise, use bigger as the minimum rate
          - maybe repeat speed tests each 10deg-th position?? take the largest 'pwm' value and set that as
-         
+
         2.2) compute rate limits on the Azimuth axis
          - copypasta the speed measuring code
          - find rate for moving cw & ccw, use bigger as mininum rate
          - maybe repeat speed tests each 15deg-th position??
         ***/
-        
+
         /***
         3) should we store these values and limits internally?
-          - how? flash memory? use memory on the arduino? can it be done?        
+          - how? flash memory? use memory on the arduino? can it be done?
         ***/
 
 
@@ -368,12 +343,12 @@ void loop()
         //Serial.write("You sent a char '7'.\t");
 
         //DRIVER.SyncToAltAz(Altitude,Azimuth), parameters in "arcminutes"
-        if (Altitude.getSlewing() || Azimuth.getSlewing()) return; //motor(s) busy with a command
+        if (AltitudeAxis.getSlewing() || Azimuth.getSlewing()) return; //motor(s) busy with a command
 
-        param1 = Altitude.getEncoder().minutesToCount(getParam1(byteArray[current]));
+        param1 = AltitudeAxis.getEncoder().minutesToCount(getParam1(byteArray[current]));
         param2 = Azimuth.getEncoder().minutesToCount(getParam2(byteArray[current]));
 
-        Altitude.setUserSyncCount(param1);
+        AltitudeAxis.setUserSyncCount(param1);
         Azimuth.setUserSyncCount(param2);
 
         Serial.write("SyncToAltAz Complete");
@@ -392,7 +367,7 @@ void loop()
         param2 = getParam2(byteArray[current]);
 
         Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
-        Altitude.motorSetup(Altitude.getEncoder().minutesToCount(param2));
+        AltitudeAxis.motorSetup(AltitudeAxis.getEncoder().minutesToCount(param2));
 
         Serial.write("Slewing Async Started");
         Serial.write('~');
@@ -407,7 +382,7 @@ void loop()
         //Serial.write("You sent a char '9'.\t");
 
         Azimuth.abort();
-        Altitude.abort();
+        AltitudeAxis.abort();
 
         Serial.write("Slewing Async Aborted");
         Serial.write('~');
@@ -478,7 +453,7 @@ void serialEvent()
 
   //STEP 1: read in length of incoming byte stream
   //STEP 2: read those number of bytes
-  //STEP 1.1: If it's a stop code??
+  //STEP 1.1: If it's a stop code?? 
 
 
   //keep adding instructions as long as there are bytes in serial available
@@ -557,6 +532,113 @@ unsigned int getParam2(byte bytesIn[])
 }
 
 
+/**
+  Move function 1)
+ - slews to position, constantly checks soft limits
+ **/
+ 
+void SlewAltAz (int param1, int param2)
+{
+
+  Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
+  AltitudeAxis.motorSetup(AltitudeAxis.getEncoder().minutesToCount(param2));
+
+
+  while (Azimuth.getSlewing() || AltitudeAxis.getSlewing())
+  {
+    if (Azimuth.getSlewing())
+      Azimuth.processPosition();
+
+    if (AltitudeAxis.getSlewing())
+      AltitudeAxis.processPosition();
+
+    if (digitalRead(LSOUT) == LOW)
+    {
+      //abort motion on Azimuth motor
+      Azimuth.abort();
+
+      //abort motion on Altitude motor
+      AltitudeAxis.reverse();
+      AltitudeAxis.updatePWM(50);
+
+      delay(50);
+
+      digitalWrite(A0, HIGH);
+      delay(50);
+
+      while (analogRead(A3) < 600)
+      {
+        delay(50);
+      }
+
+      digitalWrite(A0, LOW);
+
+      AltitudeAxis.abort();
+      delay(50);
+
+      //if we hit the hard limit, we fail
+      //Serial.write("Altitude Limit Switch Triggered - ");
+      //Q: IT SHOULDN"T THROW EXCEPTION ON LIMIT????
+      //A: it's not handled in the documentation....
+    }
+  }
+}
+
+
+/**
+  Move function 2)
+ - slews to position, searches for hard limits
+ - sets soft limits
+ **/
+ 
+void SlewAltAz2 (int param1, int param2)
+{
+
+  Azimuth.motorSetup(Azimuth.getEncoder().minutesToCount(param1));
+  AltitudeAxis.motorSetup(AltitudeAxis.getEncoder().minutesToCount(param2));
+
+
+  while (Azimuth.getSlewing() || AltitudeAxis.getSlewing())
+  {
+    if (Azimuth.getSlewing())
+      Azimuth.processPosition();
+
+    if (AltitudeAxis.getSlewing())
+      AltitudeAxis.processPosition();
+
+    if (digitalRead(LSOUT) == LOW)
+    {
+      //abort motion on Azimuth motor
+      Azimuth.abort();
+
+      //abort motion on Altitude motor
+      AltitudeAxis.reverse();
+      AltitudeAxis.updatePWM(50);
+
+      delay(50);
+
+      digitalWrite(A0, HIGH);
+      delay(50);
+
+      while (analogRead(A3) < 600)
+      {
+        delay(50);
+      }
+
+      digitalWrite(A0, LOW);
+
+      AltitudeAxis.abort();
+      delay(50);
+
+      //if we hit the hard limit, we fail
+      //Serial.write("Altitude Limit Switch Triggered - ");
+      //Q: IT SHOULDN"T THROW EXCEPTION ON LIMIT????
+      //A: it's not handled in the documentation....
+    }
+  }
+}
+
+
 /***RESULTS
 AZUMITH:
   counterclockwise : minimum pwm is 15-17, for 2 count per 1000ms
@@ -605,13 +687,13 @@ if {//(byteStringLength == '5') {
 
     Serial.print("pwm: "); Serial.println(i);
 
-    Altitude.setClockwise(dire);
-    Altitude.updatePWM(i);
+    AltitudeAxis.setClockwise(dire);
+    AltitudeAxis.updatePWM(i);
     delay(1000);
-    getrated = Altitude.getRate(); //sample time 1 second I think
+    getrated = AltitudeAxis.getRate(); //sample time 1 second I think
 
     Serial.print("rate: "); Serial.println(getrated);
-    Altitude.updatePWM(0);
+    AltitudeAxis.updatePWM(0);
     delay(500); //slow down and stop
 
     if (getrated > 1)
