@@ -659,8 +659,8 @@ if {//(byteStringLength == '5') {
 
   while (Serial.available()) Serial.read();
 
-  Serial.println("Hello David");
-  Serial.println("starting speed tests");
+  //Serial.println("Hello David");
+  //Serial.println("starting speed tests");
 
   //Hardest part is overcoming static friction to start moving
   //but once moving, it may be capable of slower speeds
@@ -676,7 +676,7 @@ if {//(byteStringLength == '5') {
 
 
   //SET HIGH,LOW //clockwise??
-  Serial.print(" -starting motor PWM test, clockwise="); Serial.println(dire);
+  //Serial.print(" -starting motor PWM test, clockwise="); Serial.println(dire);
   delay(1000);
 
   i = 128;
@@ -685,14 +685,14 @@ if {//(byteStringLength == '5') {
   while (true)
   {
 
-    Serial.print("pwm: "); Serial.println(i);
+    //Serial.print("pwm: "); Serial.println(i);
 
     AltitudeAxis.setClockwise(dire);
     AltitudeAxis.updatePWM(i);
     delay(1000);
     getrated = AltitudeAxis.getRate(); //sample time 1 second I think
 
-    Serial.print("rate: "); Serial.println(getrated);
+    //Serial.print("rate: "); Serial.println(getrated);
     AltitudeAxis.updatePWM(0);
     delay(500); //slow down and stop
 
@@ -709,8 +709,8 @@ if {//(byteStringLength == '5') {
     i = (upperbound + lowerbound) / 2;
   }
 
-  Serial.println("Minimum PWM for Altitude motor: ");
-  Serial.println(upperbound);
+  //Serial.println("Minimum PWM for Altitude motor: ");
+  //Serial.println(upperbound);
   return;
 
 }

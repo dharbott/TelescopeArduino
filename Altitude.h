@@ -11,6 +11,8 @@ class Altitude : public Axis
     Altitude(Motor myMotor, MagneticEncoder myEncoder);
     
     void findLimits();
+    
+    void findSpeeds();
   
 };
 
